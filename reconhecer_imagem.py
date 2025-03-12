@@ -7,12 +7,25 @@ from PIL import Image
 import io
 import tempfile
 
+
+chaves = {
+    "chave_1": "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",
+    "chave_2": "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",
+    "chave_3": "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",
+    "chave_4": "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"
+}
+
 class AnalisadorDocumentos:
-    def __init__(self, api_key=None):
-        self.api_key = api_key or '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'
+    def __init__(self, api_key=None, chaves_dict=None):
+        self.chaves_dict = chaves_dict or {}
+        self.api_key = api_key or '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'
         self.api_url = 'https://openrouter.ai/api/v1/chat/completions'
-        self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
+        self.headers = self._criar_headers(self.api_key)
+    
+    def _criar_headers(self, api_key):
+        """Cria os headers com a chave de API fornecida"""
+        return {
+            'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://localhost:3000',
             'X-Title': 'Document Analysis'
@@ -58,6 +71,46 @@ class AnalisadorDocumentos:
         except Exception as e:
             print(f"Erro ao processar imagem: {str(e)}")
             return None
+
+    def fazer_requisicao_com_rotacao_chaves(self, data, mostrar_debug=False):
+        """Faz requisição à API com rotação de chaves em caso de erro 401"""
+        # Primeira tentativa com a chave padrão
+        response = requests.post(self.api_url, json=data, headers=self.headers)
+        
+        if response.status_code != 401 or not self.chaves_dict:
+            # Se não for erro 401 ou não tiver chaves alternativas, retorna a resposta atual
+            return response
+        
+        if mostrar_debug:
+            print(f"Erro 401 com chave padrão. Tentando chaves alternativas...")
+        
+        # Tenta com cada chave do dicionário
+        for nome_chave, valor_chave in self.chaves_dict.items():
+            if mostrar_debug:
+                print(f"Tentando com {nome_chave}...")
+            
+            # Atualiza headers com a nova chave
+            headers_temp = self._criar_headers(valor_chave)
+            
+            # Faz nova requisição
+            response = requests.post(self.api_url, json=data, headers=headers_temp)
+            
+            if response.status_code != 401:
+                # Se não for erro 401, encontramos uma chave válida
+                if mostrar_debug:
+                    print(f"Sucesso com {nome_chave}!")
+                
+                # Atualiza a chave padrão para uso futuro
+                self.api_key = valor_chave
+                self.headers = headers_temp
+                
+                return response
+        
+        # Se chegou aqui, nenhuma chave funcionou
+        if mostrar_debug:
+            print("Todas as chaves falharam com erro 401.")
+        
+        return response  # Retorna a última resposta com erro 401
 
     def analisar_documento(self, caminho_arquivo, mostrar_debug=False):
         """Analisa um documento (imagem ou PDF) e retorna sua descrição."""
@@ -127,11 +180,11 @@ class AnalisadorDocumentos:
                 ]
             }
 
-            # Fazer requisição
-            response = requests.post(self.api_url, json=data, headers=self.headers)
+            # Fazer requisição com rotação de chaves
+            response = self.fazer_requisicao_com_rotacao_chaves(data, mostrar_debug)
             
             if mostrar_debug:
-                print(f"Status Code: {response.status_code}")
+                print(f"Status Code final: {response.status_code}")
                 print(f"Resposta completa: {response.text}")
 
             # Processar resposta
@@ -149,7 +202,7 @@ class AnalisadorDocumentos:
 
 def analisar_arquivo(caminho_arquivo, mostrar_debug=False):
     """Função auxiliar para facilitar o uso."""
-    analisador = AnalisadorDocumentos()
+    analisador = AnalisadorDocumentos(chaves_dict=chaves)
     return analisador.analisar_documento(caminho_arquivo, mostrar_debug)
 
 if __name__ == "__main__":
