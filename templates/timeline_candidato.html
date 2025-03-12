@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Timeline de Eventos - {{ candidato.nome }}</h1>
+        <a href="{% url 'detalhe_candidato' candidato.id %}" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
+            Voltar
+        </a>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Informações do Candidato</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p><span class="font-medium">Nome:</span> {{ candidato.nome }}</p>
+                <p><span class="font-medium">Telefone:</span> {{ candidato.telefone_formatado }}</p>
+                <p><span class="font-medium">Email:</span> {{ candidato.email|default:"Não informado" }}</p>
+            </div>
+            <div>
+                <p><span class="font-medium">Status:</span> <span class="px-2 py-1 rounded text-sm 
+                    {% if candidato.status == 'concluido' %}bg-green-100 text-green-800
+                    {% elif candidato.status == 'documentos_invalidos' %}bg-red-100 text-red-800
+                    {% elif candidato.status == 'documentos_pendentes' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ candidato.get_status_display }}
+                </span></p>
+                <p><span class="font-medium">Data de Cadastro:</span> {{ candidato.data_cadastro|date:"d/m/Y H:i" }}</p>
+                <p><span class="font-medium">Última Atualização:</span> {{ candidato.data_ultima_atualizacao|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Timeline de Eventos</h2>
+        
+        {% if registros %}
+            <div class="relative">
+                <!-- Linha vertical da timeline -->
+                <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                
+                <div class="space-y-8">
+                    {% for registro in registros %}
+                        <div class="relative pl-12">
+                            <!-- Círculo do evento -->
+                            <div class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center
+                                {% if registro.tipo_evento == 'cadastro' %}bg-blue-500
+                                {% elif registro.tipo_evento == 'mensagem_enviada' %}bg-purple-500
+                                {% elif registro.tipo_evento == 'documento_solicitado' %}bg-yellow-500
+                                {% elif registro.tipo_evento == 'documento_recebido' %}bg-indigo-500
+                                {% elif registro.tipo_evento == 'documento_validado' %}bg-green-500
+                                {% elif registro.tipo_evento == 'documento_invalidado' %}bg-red-500
+                                {% elif registro.tipo_evento == 'processo_concluido' %}bg-teal-500
+                                {% else %}bg-gray-500{% endif %} text-white">
+                                {% if registro.tipo_evento == 'cadastro' %}<i class="fas fa-user-plus"></i>
+                                {% elif registro.tipo_evento == 'mensagem_enviada' %}<i class="fas fa-paper-plane"></i>
+                                {% elif registro.tipo_evento == 'documento_solicitado' %}<i class="fas fa-file-alt"></i>
+                                {% elif registro.tipo_evento == 'documento_recebido' %}<i class="fas fa-inbox"></i>
+                                {% elif registro.tipo_evento == 'documento_validado' %}<i class="fas fa-check-circle"></i>
+                                {% elif registro.tipo_evento == 'documento_invalidado' %}<i class="fas fa-times-circle"></i>
+                                {% elif registro.tipo_evento == 'processo_concluido' %}<i class="fas fa-flag-checkered"></i>
+                                {% else %}<i class="fas fa-circle"></i>{% endif %}
+                            </div>
+                            
+                            <!-- Conteúdo do evento -->
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-bold text-lg">{{ registro.get_tipo_evento_display }}</h3>
+                                    <span class="text-sm text-gray-500">{{ registro.data_hora|date:"d/m/Y H:i:s" }}</span>
+                                </div>
+                                
+                                {% if registro.documento %}
+                                    <p class="mb-2"><span class="font-medium">Documento:</span> {{ registro.documento.get_tipo_display }}</p>
+                                {% endif %}
+                                
+                                {% if registro.status_anterior or registro.status_novo %}
+                                    <p class="mb-2">
+                                        <span class="font-medium">Status:</span> 
+                                        {% if registro.status_anterior %}
+                                            <span class="line-through">{{ registro.status_anterior }}</span>
+                                        {% endif %}
+                                        {% if registro.status_anterior and registro.status_novo %} → {% endif %}
+                                        {% if registro.status_novo %}
+                                            <span class="font-semibold">{{ registro.status_novo }}</span>
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                                
+                                {% if registro.tempo_desde_evento_anterior %}
+                                    <p class="mb-2"><span class="font-medium">Tempo desde evento anterior:</span> {{ registro.tempo_formatado }}</p>
+                                {% endif %}
+                                
+                                {% if registro.observacoes %}
+                                    <div class="mt-2 text-sm text-gray-700 bg-gray-100 p-2 rounded">
+                                        {{ registro.observacoes|linebreaks }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <p>Nenhum evento registrado para este candidato.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

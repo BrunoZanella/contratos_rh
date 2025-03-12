@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidatos{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Lista de Candidatos</h1>
+
+    </div>
+    
+    <!-- Versão para desktop (tabela) - esconde em telas pequenas -->
+    <div class="hidden md:block bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nome
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contato
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Documentos
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for candidato in candidatos %}
+                <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ candidato.nome }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">{{ candidato.telefone }}</div>
+                        <div class="text-sm text-gray-500">{{ candidato.email }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if candidato.status == 'ativo' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Ativo
+                        </span>
+                        {% elif candidato.status == 'em_andamento' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Em Andamento
+                        </span>
+                        {% elif candidato.status == 'documentos_pendentes' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                            Docs Pendentes
+                        </span>
+                        {% elif candidato.status == 'documentos_invalidos' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Docs Inválidos
+                        </span>
+                        {% elif candidato.status == 'concluido' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Concluído
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ candidato.status_documentos_display }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ candidato.data_cadastro|date:"d/m/Y" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                        Nenhum candidato encontrado
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Versão para mobile (cards) - mostra apenas em telas pequenas -->
+    <div class="md:hidden space-y-4">
+        {% for candidato in candidatos %}
+        <div class="bg-white shadow rounded-lg p-4 cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+            <div class="flex justify-between items-start">
+                <div class="font-medium text-gray-900">{{ candidato.nome }}</div>
+                {% if candidato.status == 'ativo' %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Ativo
+                </span>
+                {% elif candidato.status == 'em_andamento' %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    Em Andamento
+                </span>
+                {% elif candidato.status == 'documentos_pendentes' %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                    Docs Pendentes
+                </span>
+                {% elif candidato.status == 'documentos_invalidos' %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                    Docs Inválidos
+                </span>
+                {% elif candidato.status == 'concluido' %}
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    Concluído
+                </span>
+                {% endif %}
+            </div>
+            <div class="mt-2 text-sm text-gray-500">
+                <div class="flex items-center">
+                    <i class="fas fa-phone-alt mr-2"></i>
+                    {{ candidato.telefone }}
+                </div>
+                <div class="flex items-center mt-1">
+                    <i class="fas fa-envelope mr-2"></i>
+                    {{ candidato.email }}
+                </div>
+            </div>
+            <div class="mt-2 flex justify-between items-center text-sm">
+                <div>
+                    <i class="fas fa-file-alt mr-1"></i>
+                    {{ candidato.status_documentos_display }}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-alt mr-1"></i>
+                    {{ candidato.data_cadastro|date:"d/m/Y" }}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white shadow rounded-lg p-4 text-center text-gray-500">
+            Nenhum candidato encontrado
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal de adicionar candidato
+        const modalAdd = document.getElementById('modalAddCandidato');
+        const btnAdd = document.getElementById('btnAddCandidato');
+        const btnCancelAdd = document.getElementById('btnCancelAdd');
+        
+        btnAdd.addEventListener('click', function() {
+            modalAdd.classList.remove('hidden');
+        });
+        
+        btnCancelAdd.addEventListener('click', function() {
+            modalAdd.classList.add('hidden');
+        });
+        
+        // Modal de excluir candidato
+        const modalDelete = document.getElementById('modalDeleteCandidato');
+        const btnCancelDelete = document.getElementById('btnCancelDelete');
+        const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+        const deleteLinks = document.querySelectorAll('.delete-candidato');
+        
+        deleteLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const candidatoId = this.getAttribute('data-id');
+                btnConfirmDelete.href = `/candidatos/${candidatoId}/excluir/`;
+                modalDelete.classList.remove('hidden');
+            });
+        });
+        
+        btnCancelDelete.addEventListener('click', function() {
+            modalDelete.classList.add('hidden');
+        });
+    });
+</script>
+{% endblock %}
