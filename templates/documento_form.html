@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load rh_filters %} {# Carrega o filtro personalizado #}
+
+{% block title %}
+    {% if documento %}Editar{% else %}Novo{% endif %} Documento
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6"> {# Adicionado flex-col e sm:flex-row para responsividade #}
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0"> {# Adicionado margem inferior para mobile #}
+                {% if documento %}Editar{% else %}Novo{% endif %} Documento
+            </h2>
+            <a href="{% url 'detalhe_candidato' candidato.id %}" 
+               class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 w-full sm:w-auto text-center"> {# Adicionado w-full e sm:w-auto para responsividade #}
+                Voltar
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 border-yellow-400 text-yellow-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative mb-2" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if documento.arquivo %}
+        <div class="mb-4 p-4 bg-gray-100 rounded-lg">
+            <p class="text-sm text-gray-700 font-semibold">Documento Atual:</p>
+            {% if documento.arquivo.url|lower|slice:"-3:" == "pdf" %}
+                <iframe src="{{ documento.arquivo.url }}" class="w-full h-64 border rounded"></iframe>
+            {% else %}
+                <img src="{{ documento.arquivo.url }}" class="w-full h-64 object-cover rounded cursor-pointer" id="docImage">
+                <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden flex justify-center items-center z-50"> {# Adicionado z-50 para garantir que o modal fique acima de tudo #}
+                    <img src="{{ documento.arquivo.url }}" class="max-w-full max-h-full">
+                </div>
+                <script>
+                    document.getElementById("docImage").addEventListener("click", function() {
+                        document.getElementById("imageModal").classList.remove("hidden");
+                    });
+                    document.getElementById("imageModal").addEventListener("click", function() {
+                        this.classList.add("hidden");
+                    });
+                </script>
+            {% endif %}
+            <a href="{{ documento.arquivo.url }}" target="_blank" 
+               class="text-blue-500 hover:underline block mt-2">
+                Baixar Documento
+            </a>
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            
+            <!-- Campo Tipo com botão para adicionar novo tipo -->
+            <div>
+                <label for="{{ form.tipo.id_for_label }}" 
+                       class="block text-sm font-medium text-gray-800">
+                    {{ form.tipo.label }}
+                </label>
+                <div class="mt-1 flex space-x-2">
+                    <div class="flex-grow">
+                        {{ form.tipo }}
+                    </div>
+                    <button type="button" 
+                            onclick="abrirModalNovoTipo()"
+                            class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 flex items-center">
+                        <i class="fas fa-plus mr-1"></i> Novo Tipo
+                    </button>
+                </div>
+                {% if form.tipo.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.tipo.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Outros campos do formulário -->
+            {% for field in form %}
+                {% if field.name != 'tipo' and field.name != 'observacoes' %}
+                <div>
+                    <label for="{{ field.id_for_label }}" 
+                        class="block text-sm font-medium text-gray-800">
+                        {{ field.label }}
+                    </label>
+                    <div class="mt-1">
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Campo Observações -->
+            <div class="form-group">
+                <label for="id_observacoes">Observações:</label>
+                <div id="id_observacoes_display">
+                    {{ form.observacoes.value|safe }}
+                </div>
+                {{ form.observacoes.errors }}
+            </div>
+
+            <button type="submit" 
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Salvar Documento
+            </button>
+        </form>
+    </div>
+
+    {% if documento %}
+    <!-- Timeline do Documento -->
+    <div class="bg-white shadow-lg rounded-lg p-6 mt-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Histórico de Status</h2>
+        
+        {% if documento.registros_tempo.all %}
+        <div class="relative">
+            <!-- Linha vertical da timeline -->
+            <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+            
+            <div class="space-y-6">
+                {% for registro in documento.registros_tempo.all|dictsortreversed:"data_hora" %}
+                <div class="relative pl-12">
+                    <!-- Círculo do evento -->
+                    <div class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center
+                        {% if registro.tipo_evento == 'documento_solicitado' %}bg-yellow-500
+                        {% elif registro.tipo_evento == 'documento_recebido' %}bg-indigo-500
+                        {% elif registro.tipo_evento == 'documento_validado' %}bg-green-500
+                        {% elif registro.tipo_evento == 'documento_invalidado' %}bg-red-500
+                        {% else %}bg-gray-500{% endif %} text-white">
+                        {% if registro.tipo_evento == 'documento_solicitado' %}<i class="fas fa-file-alt"></i>
+                        {% elif registro.tipo_evento == 'documento_recebido' %}<i class="fas fa-inbox"></i>
+                        {% elif registro.tipo_evento == 'documento_validado' %}<i class="fas fa-check-circle"></i>
+                        {% elif registro.tipo_evento == 'documento_invalidado' %}<i class="fas fa-times-circle"></i>
+                        {% else %}<i class="fas fa-circle"></i>{% endif %}
+                    </div>
+                    
+                    <!-- Conteúdo do evento -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">{{ registro.get_tipo_evento_display }}</h3>
+                            <span class="text-sm text-gray-500">{{ registro.data_hora|date:"d/m/Y H:i:s" }}</span>
+                        </div>
+                        
+                        {% if registro.status_anterior or registro.status_novo %}
+                        <p class="mb-2">
+                            <span class="font-medium">Status:</span> 
+                            {% if registro.status_anterior %}
+                                <span class="line-through">
+                                    {% for key, value in documento.STATUS_CHOICES %}
+                                        {% if key == registro.status_anterior %}{{ value }}{% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}
+                            {% if registro.status_anterior and registro.status_novo %} → {% endif %}
+                            {% if registro.status_novo %}
+                                <span class="font-semibold">
+                                    {% for key, value in documento.STATUS_CHOICES %}
+                                        {% if key == registro.status_novo %}{{ value }}{% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}
+                        </p>
+                        {% endif %}
+                        
+                        {% if registro.tempo_desde_evento_anterior %}
+                        <p class="mb-2">
+                            <span class="font-medium">Tempo desde alteração anterior:</span> 
+                            {# Usa o filtro personalizado para formatar a duração #}
+                            {{ registro.tempo_desde_evento_anterior|format_duration }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if registro.observacoes %}
+                        <div class="mt-2 text-sm text-gray-700 bg-gray-100 p-2 rounded">
+                            {{ registro.observacoes|linebreaks }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p>Nenhuma alteração de status registrada para este documento.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para adicionar novo tipo de documento -->
+<div id="modal-novo-tipo" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg m-4 w-full max-w-md">
+        <h3 class="text-lg font-bold mb-4">Adicionar Novo Tipo de Documento</h3>
+        
+        <div class="space-y-4">
+            <div>
+                <label for="novo-tipo-nome" class="block text-sm font-medium text-gray-800">
+                    Código Interno
+                </label>
+                <input type="text" id="novo-tipo-nome" 
+                       class="w-full rounded-md border-gray-300"
+                       placeholder="Ex: RG, CPF, CTPS (sem espaços)">
+                <p class="text-xs text-gray-500 mt-1">Código interno usado pelo sistema (sem espaços)</p>
+            </div>
+            
+            <div>
+                <label for="novo-tipo-exibicao" class="block text-sm font-medium text-gray-800">
+                    Nome de Exibição
+                </label>
+                <input type="text" id="novo-tipo-exibicao" 
+                       class="w-full rounded-md border-gray-300"
+                       placeholder="Ex: Carteira de Identidade, Carteira de Trabalho">
+                <p class="text-xs text-gray-500 mt-1">Nome amigável que será exibido para os usuários</p>
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="novo-tipo-ativo" 
+                       class="rounded border-gray-300 text-indigo-600"
+                       checked>
+                <label for="novo-tipo-ativo" class="ml-2 block text-sm font-medium text-gray-800">
+                    Ativo
+                </label>
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 mt-6">
+            <button onclick="fecharModalNovoTipo()" 
+                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Cancelar
+            </button>
+            <button onclick="salvarNovoTipo()" 
+                    class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Salvar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalNovoTipo() {
+        document.getElementById('modal-novo-tipo').classList.remove('hidden');
+    }
+    
+    function fecharModalNovoTipo() {
+        document.getElementById('modal-novo-tipo').classList.add('hidden');
+    }
+    
+    function salvarNovoTipo() {
+        const nome = document.getElementById('novo-tipo-nome').value.trim().toUpperCase();
+        const nomeExibicao = document.getElementById('novo-tipo-exibicao').value.trim();
+        const ativo = document.getElementById('novo-tipo-ativo').checked;
+        
+        if (!nome) {
+            alert('Por favor, informe o código interno do tipo de documento.');
+            return;
+        }
+        
+        if (!nomeExibicao) {
+            alert('Por favor, informe o nome de exibição do tipo de documento.');
+            return;
+        }
+        
+        // Enviar requisição AJAX para criar o novo tipo
+        const formData = new FormData();
+        formData.append('nome', nome);
+        formData.append('nome_exibicao', nomeExibicao);
+        formData.append('ativo', ativo ? '1' : '0');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch('{% url "ajax_criar_tipo_documento" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Adicionar o novo tipo ao select
+                const select = document.getElementById('{{ form.tipo.id_for_label }}');
+                const option = new Option(data.nome_exibicao, data.id);
+                select.add(option);
+                select.value = data.id;  // Selecionar o novo tipo
+                
+                // Fechar o modal
+                fecharModalNovoTipo();
+                
+                // Limpar os campos
+                document.getElementById('novo-tipo-nome').value = '';
+                document.getElementById('novo-tipo-exibicao').value = '';
+                
+                // Mostrar mensagem de sucesso
+                alert('Tipo de documento criado com sucesso!');
+            } else {
+                alert('Erro ao criar tipo de documento: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao criar tipo de documento. Verifique o console para mais detalhes.');
+        });
+    }
+</script>
+{% endblock %}

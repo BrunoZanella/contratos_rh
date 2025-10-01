@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Agradecemos sua Participação{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="card shadow text-center">
+        <div class="card-header bg-success text-white">
+            <h3 class="mb-0">Pesquisa Enviada com Sucesso!</h3>
+        </div>
+        <div class="card-body py-5">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                <!-- Se não tiver Font Awesome, pode usar um emoji: -->
+                <!-- <span style="font-size: 5rem;">✅</span> -->
+            </div>
+            
+            <h4 class="mb-4">Obrigado, {{ avaliacao.gestor_avaliador }}!</h4>
+            
+            <p class="lead">Agradecemos por dedicar seu tempo para responder a avaliação de período de experiência do colaborador {{ avaliacao.colaborador }}.</p>
+            
+            <div class="mt-5">
+                <a href="/" class="btn btn-primary">Voltar para a Página Inicial</a>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <small>© {% now "Y" %} Integrações e Automações BRG. Todos os direitos reservados.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

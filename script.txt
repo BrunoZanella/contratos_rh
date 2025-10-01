@@ -1,0 +1,7 @@
+
+journalctl -u contratos_rh.service -f
+
+sudo nano /etc/systemd/system/contratos_rh.service 
+sudo systemctl daemon-reload
+sudo systemctl restart contratos_rh.service
+sudo systemctl status contratos_rh.service

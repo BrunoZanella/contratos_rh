@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidatos{% endblock %}
+
+{% block content %}
+<style>
+    .search-container {
+        position: relative;
+        max-width: 400px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.5rem 1rem 0.5rem 2.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .clear-search:hover {
+        color: #6b7280;
+    }
+
+    .tab-button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .tab-button.active {
+        background-color: #4f46e5;
+        color: white;
+    }
+
+    .tab-button:not(.active) {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+
+    .tab-button:not(.active):hover {
+        background-color: #d1d5db;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .status-ativo { background-color: #fef3c7; color: #92400e; }
+    .status-em_andamento { background-color: #dbeafe; color: #1e40af; }
+    .status-documentos_pendentes { background-color: #fed7aa; color: #ea580c; }
+    .status-documentos_invalidos { background-color: #fecaca; color: #dc2626; }
+    .status-concluido { background-color: #bbf7d0; color: #166534; }
+    .status-rejeitado { background-color: #a6aebe; color: #000000; }
+
+    .result-count {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Lista de Candidatos</h1>
+    </div>
+    
+    <!-- Campo de Pesquisa Global -->
+    <div class="mb-6">
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="globalSearchInput"
+                placeholder="Pesquisar por nome, contato, status..."
+                class="search-input"
+                value="{{ search_query }}"
+            >
+            <i class="fas fa-search search-icon"></i>
+            <i class="fas fa-times clear-search" id="clearGlobalSearch" {% if not search_query %}style="display: none;"{% endif %} onclick="clearGlobalSearch()"></i>
+        </div>
+        {% if search_query %}
+        <div id="searchResultCount" class="result-count">
+            {{ candidatos|length }} resultado{{ candidatos|length|pluralize }} encontrado{{ candidatos|length|pluralize }}
+        </div>
+        {% else %}
+        <div id="searchResultCount" class="result-count" style="display: none;"></div>
+        {% endif %}
+    </div>
+    
+    <!-- Tabs para filtrar por status -->
+    <div class="flex flex-wrap gap-2 mb-6" id="statusTabs">
+        <a href="{% url 'lista_candidatos' %}?status=todos{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'todos' %}active{% endif %}">
+            Todos ({{ contadores.todos }})
+        </a>
+        <a href="{% url 'lista_candidatos' %}?status=ativo{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'ativo' %}active{% endif %}">
+            Ativos ({{ contadores.ativo }})
+        </a>
+        <a href="{% url 'lista_candidatos' %}?status=documentos_pendentes{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'documentos_pendentes' %}active{% endif %}">
+            Pendentes ({{ contadores.documentos_pendentes }})
+        </a>
+        <a href="{% url 'lista_candidatos' %}?status=documentos_invalidos{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'documentos_invalidos' %}active{% endif %}">
+            Inválidos ({{ contadores.documentos_invalidos }})
+        </a>
+        <a href="{% url 'lista_candidatos' %}?status=concluido{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'concluido' %}active{% endif %}">
+            Concluídos ({{ contadores.concluido }})
+        </a>
+        <a href="{% url 'lista_candidatos' %}?status=rejeitado{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="tab-button {% if status_atual == 'rejeitado' %}active{% endif %}">
+            Rejeitados ({{ contadores.rejeitado }})
+        </a>
+    </div>
+    
+    <!-- Lista de candidatos oculta para JavaScript -->
+    <div id="allCandidatosData" style="display: none;">
+        {% for candidato in todos_candidatos %}
+        <div class="candidato-data"
+             data-id="{{ candidato.id }}"
+             data-nome="{{ candidato.nome|lower }}"
+             data-telefone="{{ candidato.telefone }}"
+             data-email="{{ candidato.email|lower }}"
+             data-status="{{ candidato.status }}"
+             data-status-display="{{ candidato.get_status_display|lower }}"
+             data-data-cadastro="{{ candidato.data_cadastro|date:'d/m/Y' }}"
+             data-status-documentos="{{ candidato.status_documentos_display }}">
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Versão para desktop (tabela) -->
+    <div class="hidden md:block bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nome
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contato
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Documentos
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="candidatosTableBody">
+                {% for candidato in candidatos %}
+                <tr class="hover:bg-gray-50 candidato-row"
+                    data-id="{{ candidato.id }}"
+                    data-nome="{{ candidato.nome|lower }}"
+                    data-telefone="{{ candidato.telefone }}"
+                    data-email="{{ candidato.email|lower }}"
+                    data-status="{{ candidato.status }}"
+                    data-status-display="{{ candidato.get_status_display|lower }}">
+                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                        <div class="text-sm font-medium text-gray-900">{{ candidato.nome }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                        <div class="text-sm text-gray-500">{{ candidato.telefone }}</div>
+                        <div class="text-sm text-gray-500">{{ candidato.email }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                        <span class="status-badge status-{{ candidato.status }}">
+                            {{ candidato.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                        {{ candidato.status_documentos_display }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer" onclick="window.location='{% url 'detalhe_candidato' candidato.id %}'">
+                        {{ candidato.data_cadastro|date:"d/m/Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if candidato.status == 'ativo' %}
+                        <a href="{% url 'iniciar_processo' candidato.id %}" class="text-green-600 hover:text-green-900" title="Iniciar Processo">
+                            <i class="fas fa-play"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'editar_candidato' candidato.id %}" class="text-blue-600 hover:text-blue-900 ml-3" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="noResultsDesktop">
+                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                        Nenhum candidato encontrado
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Versão para mobile (cards) -->
+    <div class="md:hidden space-y-4" id="candidatosMobileContainer">
+        {% for candidato in candidatos %}
+        <div class="bg-white shadow rounded-lg p-4 candidato-card"
+             data-id="{{ candidato.id }}"
+             data-nome="{{ candidato.nome|lower }}"
+             data-telefone="{{ candidato.telefone }}"
+             data-email="{{ candidato.email|lower }}"
+             data-status="{{ candidato.status }}"
+             data-status-display="{{ candidato.get_status_display|lower }}">
+            <div class="flex justify-between items-start">
+                <div class="font-medium text-gray-900">{{ candidato.nome }}</div>
+                <span class="status-badge status-{{ candidato.status }}">
+                    {{ candidato.get_status_display }}
+                </span>
+            </div>
+            <div class="mt-2 text-sm text-gray-500">
+                <div class="flex items-center">
+                    <i class="fas fa-phone-alt mr-2"></i>
+                    {{ candidato.telefone }}
+                </div>
+                <div class="flex items-center mt-1">
+                    <i class="fas fa-envelope mr-2"></i>
+                    {{ candidato.email }}
+                </div>
+            </div>
+            <div class="mt-2 flex justify-between items-center text-sm">
+                <div>
+                    <i class="fas fa-file-alt mr-1"></i>
+                    {{ candidato.status_documentos_display }}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-alt mr-1"></i>
+                    {{ candidato.data_cadastro|date:"d/m/Y" }}
+                </div>
+            </div>
+            <div class="mt-3 flex justify-end space-x-3">
+                {% if candidato.status == 'ativo' %}
+                <a href="{% url 'iniciar_processo' candidato.id %}" class="text-green-600 hover:text-green-900" title="Iniciar Processo">
+                    <i class="fas fa-play"></i>
+                </a>
+                {% endif %}
+                <a href="{% url 'editar_candidato' candidato.id %}" class="text-blue-600 hover:text-blue-900" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'detalhe_candidato' candidato.id %}" class="text-gray-600 hover:text-gray-900" title="Ver Detalhes">
+                    <i class="fas fa-eye"></i>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-results" id="noResultsMobile">
+            <i class="fas fa-user-slash text-3xl mb-2"></i>
+            <p>Nenhum candidato encontrado</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação (apenas se não for pesquisa) -->
+    {% if not is_search and candidatos.has_other_pages %}
+    <div class="hidden md:flex justify-between items-center mt-6 px-6 py-3 bg-gray-50">
+        <div class="text-sm text-gray-700">
+            Mostrando {{ candidatos.start_index }} a {{ candidatos.end_index }} de {{ candidatos.paginator.count }} candidatos
+        </div>
+        <div class="flex space-x-2">
+            {% if candidatos.has_previous %}
+            <a href="?status={{ status_atual }}&page={{ candidatos.previous_page_number }}" 
+               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                Anterior
+            </a>
+            {% endif %}
+            
+            {% for num in candidatos.paginator.page_range %}
+                {% if candidatos.number == num %}
+                <span class="px-3 py-2 text-sm bg-blue-600 text-white border border-blue-600 rounded-md">
+                    {{ num }}
+                </span>
+                {% elif num > candidatos.number|add:'-3' and num < candidatos.number|add:'3' %}
+                <a href="?status={{ status_atual }}&page={{ num }}" 
+                   class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if candidatos.has_next %}
+            <a href="?status={{ status_atual }}&page={{ candidatos.next_page_number }}" 
+               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                Próximo
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+let allCandidatosData = [];
+let searchTimeout;
+
+// Inicializar dados dos candidatos
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar dados dos candidatos
+    const candidatoDataElements = document.querySelectorAll('.candidato-data');
+    candidatoDataElements.forEach(element => {
+        allCandidatosData.push({
+            id: element.getAttribute('data-id'),
+            nome: element.getAttribute('data-nome'),
+            telefone: element.getAttribute('data-telefone'),
+            email: element.getAttribute('data-email'),
+            status: element.getAttribute('data-status'),
+            statusDisplay: element.getAttribute('data-status-display'),
+            dataCadastro: element.getAttribute('data-data-cadastro'),
+            statusDocumentos: element.getAttribute('data-status-documentos')
+        });
+    });
+
+    // Event listeners
+    const searchInput = document.getElementById('globalSearchInput');
+    searchInput.addEventListener('input', handleGlobalSearch);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearGlobalSearch();
+        }
+    });
+    
+    // Mostrar botão limpar se há texto
+    if (searchInput.value.trim()) {
+        document.getElementById('clearGlobalSearch').style.display = 'block';
+    }
+});
+
+function handleGlobalSearch() {
+    const searchInput = document.getElementById('globalSearchInput');
+    const clearButton = document.getElementById('clearGlobalSearch');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    // Mostrar/esconder botão de limpar
+    if (searchTerm) {
+        clearButton.style.display = 'block';
+    } else {
+        clearButton.style.display = 'none';
+    }
+    
+    // Debounce para evitar muitas requisições
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        if (searchTerm) {
+            // Fazer pesquisa global
+            performGlobalSearch(searchTerm);
+        } else {
+            // Limpar pesquisa
+            clearGlobalSearch();
+        }
+    }, 300);
+}
+
+function performGlobalSearch(searchTerm) {
+    // Filtrar candidatos
+    const filteredCandidatos = allCandidatosData.filter(candidato => {
+        return candidato.nome.includes(searchTerm) ||
+               candidato.telefone.includes(searchTerm) ||
+               candidato.email.includes(searchTerm) ||
+               candidato.statusDisplay.includes(searchTerm);
+    });
+    
+    // Encontrar o status mais comum nos resultados
+    const statusCounts = {};
+    filteredCandidatos.forEach(candidato => {
+        statusCounts[candidato.status] = (statusCounts[candidato.status] || 0) + 1;
+    });
+    
+    let targetStatus = 'ativo'; // padrão
+    let maxCount = 0;
+    
+    Object.keys(statusCounts).forEach(status => {
+        if (statusCounts[status] > maxCount) {
+            maxCount = statusCounts[status];
+            targetStatus = status;
+        }
+    });
+    
+    // Redirecionar para a página com pesquisa
+    const url = new URL(window.location.origin + "{% url 'lista_candidatos' %}");
+    url.searchParams.set('status', targetStatus);
+    url.searchParams.set('search', document.getElementById('globalSearchInput').value);
+    
+    window.location.href = url.toString();
+}
+
+function clearGlobalSearch() {
+    const searchInput = document.getElementById('globalSearchInput');
+    searchInput.value = '';
+    document.getElementById('clearGlobalSearch').style.display = 'none';
+    
+    // Redirecionar para lista sem pesquisa
+    const url = new URL(window.location.origin + "{% url 'lista_candidatos' %}");
+    url.searchParams.set('status', '{{ status_atual }}');
+    
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

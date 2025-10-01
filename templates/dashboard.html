@@ -1,0 +1,684 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #eef2ff;
+        --success: #10b981;
+        --success-light: #ecfdf5;
+        --reject: #6b7280;       /* cinza escuro para rejeitado */
+        --reject-light: #f3f4f6; /* cinza bem claro de fundo */
+        --warning: #f59e0b;
+        --warning-light: #fffbeb;
+        --danger: #ef4444;
+        --danger-light: #fef2f2;
+        --neutral: #6b7280;
+        --neutral-light: #f9fafb;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+        --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    body {
+        background-color: #f5f7fa;
+        color: #334155;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    
+    .card:hover {
+        box-shadow: var(--card-shadow-hover);
+    }
+    
+    .stat-card {
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--card-shadow-hover);
+    }
+    
+    .icon-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 9999px;
+    }
+    
+    /* Estilos para os badges de status */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 9999px;
+    }
+    
+    .status-ativo {
+        background-color: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .status-aguardando_inicio {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+    
+    .status-em_andamento {
+        background-color: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .status-documentos_pendentes {
+        background-color: var(--warning-light);
+        color: var(--warning);
+    }
+    
+    .status-documentos_invalidos {
+        background-color: var(--danger-light);
+        color: var(--danger);
+    }
+    
+    .status-concluido {
+        background-color: var(--success-light);
+        color: var(--success);
+    }
+
+    .status-rejeitado {
+        background-color: var(--reject-light);
+        color: var(--reject);
+    }    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        padding: 0.625rem 1.25rem;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #4338ca;
+    }
+    
+    .btn-secondary {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #d1d5db;
+    }
+    
+    .table-row {
+        transition: all 0.2s ease;
+    }
+    
+    .table-row:hover {
+        background-color: #f9fafb;
+    }
+    
+    .modal-backdrop {
+        background-color: rgba(17, 24, 39, 0.7);
+        backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 0.625rem;
+        border-radius: 0.5rem;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s ease;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.375rem;
+    }
+
+    /* Toggle Switch Styles */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .toggle-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        transition: color 0.3s ease;
+    }
+
+    .toggle-label.active {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    /* Estilos para pesquisa */
+    .search-container {
+        position: relative;
+        max-width: 400px;
+        margin-left: auto;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.5rem 1rem 0.5rem 2.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .clear-search:hover {
+        color: #6b7280;
+    }
+
+    .hidden-row {
+        display: none !important;
+    }
+    
+</style>
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-600 mt-1">Gerencie seus candidatos e processos de contratação</p>
+        </div>
+        
+        <button onclick="document.getElementById('modal-novo-candidato').classList.remove('hidden')"
+                class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Novo Candidato
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <!-- Card - Candidatos Ativos -->
+        <a href="{% url 'lista_candidatos' %}?status=ativo" class="stat-card group h-full">
+            <div class="flex items-center p-6 h-full" style="background-color: #eef2ff; border-color: #c7d2fe;">
+                <div class="icon-circle bg-white mr-4">
+                    <i class="fas fa-users text-2xl text-primary"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Candidatos Ativos</p>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ ativos_count }}</h3>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card - Pendentes -->
+        <a href="{% url 'lista_candidatos' %}?status=documentos_pendentes" class="stat-card group h-full">
+            <div class="flex items-center p-6 h-full" style="background-color: #fffbeb; border-color: #fde68a;">
+                <div class="icon-circle bg-white mr-4">
+                    <i class="fas fa-clock text-2xl text-warning"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Pendentes</p>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ pendentes_count }}</h3>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card - Documentos com Erro -->
+        <a href="{% url 'lista_candidatos' %}?status=documentos_invalidos" class="stat-card group h-full">
+            <div class="flex items-center p-6 h-full" style="background-color: #fef2f2; border-color: #fecaca;">
+                <div class="icon-circle bg-white mr-4">
+                    <i class="fas fa-exclamation-triangle text-2xl text-danger"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Docs com Erro</p>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ invalidos_count }}</h3>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card - Concluídos -->
+        <a href="{% url 'lista_candidatos' %}?status=concluido" class="stat-card group h-full">
+            <div class="flex items-center p-6 h-full" style="background-color: #ecfdf5; border-color: #a7f3d0;">
+                <div class="icon-circle bg-white mr-4">
+                    <i class="fas fa-check-circle text-2xl text-success"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1">Concluídos</p>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ concluidos_count }}</h3>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card - Rejeitados -->
+        <a href="{% url 'lista_candidatos' %}?status=rejeitado" class="stat-card group h-full">
+            <div class="flex items-center p-6 h-full" style="background-color: #a6aebe; border-color: #333437;">
+                <div class="icon-circle bg-white mr-4">
+                    <i class="fas fa-times-circle text-2xl" style="color: #3f4147;"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600 mb-1" style="color: #000000;">Rejeitados</p>
+                    <h3 class="text-2xl font-bold text-gray-900" style="color: #000000;">{{ rejeitados_count }}</h3>
+                </div>
+            </div>
+        </a>
+    </div>
+
+
+    <!-- Lista de Candidatos Recentes -->
+    <div class="card p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h2 class="text-xl font-bold text-gray-900">Candidatos Recentes</h2>
+            
+            <!-- Campo de Pesquisa -->
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Pesquisar por nome, status, tipo, data..."
+                    class="search-input"
+                >
+                <i class="fas fa-search search-icon"></i>
+                <i class="fas fa-times clear-search" id="clearSearch" style="display: none;" onclick="clearSearch()"></i>
+            </div>
+        </div>
+         
+        <!-- Versão para desktop (tabela) - esconde em telas pequenas -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100" id="candidatosTableBody">
+                    {% for candidato in candidatos_recentes %}
+                    <tr class="table-row cursor-pointer candidato-row"
+                        onclick="window.location.href='{% url 'detalhe_candidato' candidato.id %}';"
+                        data-nome="{{ candidato.nome|lower }}"
+                        data-status="{{ candidato.get_status_display|lower }}"
+                        data-tipo="{{ candidato.get_tipo_contratacao_display|lower }}"
+                        data-data="{{ candidato.data_cadastro|date:'d/m/Y' }}">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-primary-light text-primary rounded-full flex items-center justify-center">
+                                    <span class="font-medium">{{ candidato.nome|slice:":1" }}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ candidato.nome }}</div>
+                                    <div class="text-sm text-gray-500">{{ candidato.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="status-badge status-{{ candidato.status }}">
+                                {{ candidato.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if candidato.tipo_contratacao == 'clt' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ candidato.get_tipo_contratacao_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ candidato.data_cadastro|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr id="noResults">
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                            Nenhum candidato recente
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Versão para mobile (cards) - mostra apenas em telas pequenas -->
+        <div class="md:hidden space-y-4" id="candidatosMobileContainer">
+            {% for candidato in candidatos_recentes %}
+            <div class="bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors candidato-card"
+                 onclick="window.location.href='{% url 'detalhe_candidato' candidato.id %}';"
+                 data-nome="{{ candidato.nome|lower }}"
+                 data-status="{{ candidato.get_status_display|lower }}"
+                 data-tipo="{{ candidato.get_tipo_contratacao_display|lower }}"
+                 data-data="{{ candidato.data_cadastro|date:'d/m/Y' }}">
+                <div class="flex items-center mb-2">
+                    <div class="flex-shrink-0 h-10 w-10 bg-primary-light text-primary rounded-full flex items-center justify-center mr-3">
+                        <span class="font-medium">{{ candidato.nome|slice:":1" }}</span>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">{{ candidato.nome }}</div>
+                        <div class="text-xs text-gray-500">{{ candidato.email }}</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-2">
+                    <div class="flex space-x-2">
+                        <span class="status-badge status-{{ candidato.status }}">
+                            {{ candidato.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-2">
+                    <div class="flex space-x-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if candidato.tipo_contratacao == 'clt' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ candidato.get_tipo_contratacao_display }}
+                        </span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        <i class="fas fa-calendar-alt mr-1"></i> {{ candidato.data_cadastro|date:"d/m/Y" }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center text-gray-500 py-6" id="noResultsMobile">
+                <i class="fas fa-user-slash text-3xl mb-2"></i>
+                <p>Nenhum candidato recente</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Candidato -->
+<div id="modal-novo-candidato" class="hidden fixed inset-0 modal-backdrop overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="modal-content relative bg-white w-full max-w-md mx-4 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900">Novo Candidato</h3>
+            <button onclick="document.getElementById('modal-novo-candidato').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+            
+            <!-- Toggle Switch para Tipo de Contratação -->
+            <div>
+                <label class="form-label">Tipo de Contratação</label>
+                <div class="flex items-center justify-center space-x-4 mt-2">
+                    <span class="toggle-label active" id="label-clt">CLT</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-contratacao" onchange="toggleContratacao()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label" id="label-pj">PJ</span>
+                </div>
+                <!-- Campo hidden para enviar o valor -->
+                <input type="hidden" name="tipo_contratacao" id="tipo_contratacao" value="clt">
+            </div>
+
+            {% for field in form %}
+                {% if field.name != 'tipo_contratacao' %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="form-label">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <p class="text-danger text-sm mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button"
+                        onclick="document.getElementById('modal-novo-candidato').classList.add('hidden')"
+                        class="btn btn-secondary">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Cadastrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleContratacao() {
+    const toggle = document.getElementById('toggle-contratacao');
+    const hiddenField = document.getElementById('tipo_contratacao');
+    const labelClt = document.getElementById('label-clt');
+    const labelPj = document.getElementById('label-pj');
+    
+    if (toggle.checked) {
+        hiddenField.value = 'pj';
+        labelClt.classList.remove('active');
+        labelPj.classList.add('active');
+    } else {
+        hiddenField.value = 'clt';
+        labelClt.classList.add('active');
+        labelPj.classList.remove('active');
+    }
+}
+
+// Função de pesquisa em tempo real
+function filterCandidatos() {
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    // Mostrar/esconder botão de limpar
+    if (searchTerm) {
+        clearButton.style.display = 'block';
+    } else {
+        clearButton.style.display = 'none';
+    }
+    
+    // Filtrar tabela desktop
+    const tableRows = document.querySelectorAll('.candidato-row');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        const nome = row.getAttribute('data-nome') || '';
+        const status = row.getAttribute('data-status') || '';
+        const tipo = row.getAttribute('data-tipo') || '';
+        const data = row.getAttribute('data-data') || '';
+        
+        const matches = nome.includes(searchTerm) || 
+                       status.includes(searchTerm) || 
+                       tipo.includes(searchTerm) || 
+                       data.includes(searchTerm);
+        
+        if (matches && visibleCount < 5) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Filtrar cards mobile
+    const mobileCards = document.querySelectorAll('.candidato-card');
+    let visibleMobileCount = 0;
+    
+    mobileCards.forEach(card => {
+        const nome = card.getAttribute('data-nome') || '';
+        const status = card.getAttribute('data-status') || '';
+        const tipo = card.getAttribute('data-tipo') || '';
+        const data = card.getAttribute('data-data') || '';
+        
+        const matches = nome.includes(searchTerm) || 
+                       status.includes(searchTerm) || 
+                       tipo.includes(searchTerm) || 
+                       data.includes(searchTerm);
+        
+        if (matches && visibleMobileCount < 5) {
+            card.style.display = '';
+            visibleMobileCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Mostrar mensagem "nenhum resultado" se necessário
+    const noResults = document.getElementById('noResults');
+    const noResultsMobile = document.getElementById('noResultsMobile');
+    
+    if (noResults) {
+        noResults.style.display = visibleCount === 0 && searchTerm ? '' : 'none';
+    }
+    
+    if (noResultsMobile) {
+        noResultsMobile.style.display = visibleMobileCount === 0 && searchTerm ? '' : 'none';
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = '';
+    filterCandidatos();
+    searchInput.focus();
+}
+
+// Inicializar eventos
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    
+    // Pesquisa em tempo real
+    searchInput.addEventListener('input', filterCandidatos);
+    
+    // Limpar com Escape
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearSearch();
+        }
+    });
+    
+    // Inicializar o estado do toggle
+    const labelClt = document.getElementById('label-clt');
+    if (labelClt) {
+        labelClt.classList.add('active');
+    }
+});
+</script>
+
+{% if messages %}
+<div id="messages" class="fixed bottom-4 right-4 z-50 max-w-sm">
+    {% for message in messages %}
+    <div class="bg-white text-black px-4 py-3 rounded-lg shadow-lg mb-2 flex items-center justify-between border border-gray-300">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2 text-green-500"></i>
+            <span>{{ message }}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-black ml-2">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+<script>
+    setTimeout(() => {
+        const messages = document.getElementById('messages');
+        if (messages) {
+            messages.remove();
+        }
+    }, 5000);
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,740 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Candidato{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 class="text-2xl font-bold">Detalhes do Candidato</h1>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <a href="{% url 'editar_candidato' candidato.id %}" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center justify-center w-full sm:w-auto">
+                <i class="fas fa-edit mr-1"></i> Editar
+            </a>
+
+            {# --- Botões de rejeição/remover rejeição --- #}
+            {% if candidato.status != 'rejeitado' %}
+                <form method="post" action="{% url 'rejeitar_candidato' candidato.id %}" class="inline" onsubmit="return confirm('Confirmar rejeição deste candidato?');">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white py-2 px-4 rounded flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-user-slash mr-1"></i> Rejeitar Candidato
+                    </button>
+                </form>
+            {% else %}
+                <form method="post" action="{% url 'remover_rejeicao_candidato' candidato.id %}" class="inline" onsubmit="return confirm('Remover rejeição e recalcular status pelos documentos?');">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-user-check mr-1"></i> Remover Rejeição
+                    </button>
+                </form>
+            {% endif %}
+
+            <!-- Substituindo botão simples por botão que abre modal para pausar cobrança -->
+            {% if candidato.controle_cobranca.cobranca_pausada %}
+                <form method="post" action="{% url 'reativar_cobranca_candidato' candidato.id %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-play mr-1"></i> Reativar Cobrança
+                    </button>
+                </form>
+            {% else %}
+                <button type="button" onclick="abrirModalPausarCobranca()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded flex items-center justify-center w-full sm:w-auto">
+                    <i class="fas fa-pause mr-1"></i> Pausar Cobrança
+                </button>
+            {% endif %}
+            <a href="#" onclick="confirmarExclusaoCandidato()" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded delete-candidato flex items-center justify-center w-full sm:w-auto" data-id="{{ candidato.id }}">
+                <i class="fas fa-trash mr-1"></i> Excluir
+            </a>
+        </div>
+    </div>
+    
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 border-yellow-400 text-yellow-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative mb-2" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Adicionado aviso sobre status da cobrança automática -->
+    {% if candidato.controle_cobranca.cobranca_pausada %}
+    <div class="bg-green-100 border-l-4 border-green-500 p-4 mb-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-pause text-green-500"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-green-700">
+                    <strong>Cobrança pausada para {{ candidato.nome }}!</strong>
+                    {% if candidato.controle_cobranca.data_pausa %}
+                        <br>Pausada em: {{ candidato.controle_cobranca.data_pausa|date:"d/m/Y H:i" }}
+                    {% endif %}
+                    {% if candidato.controle_cobranca.pausado_por %}
+                        <br>Pausada por: {{ candidato.controle_cobranca.pausado_por.get_full_name|default:candidato.controle_cobranca.pausado_por.username }}
+                    {% endif %}
+                    {% if candidato.controle_cobranca.motivo_pausa %}
+                        <br>Motivo: {{ candidato.controle_cobranca.motivo_pausa }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if candidato.status == 'ativo' %}
+    <div class="bg-yellow-100 p-4 rounded-lg mb-4">
+        <p class="text-yellow-800 font-semibold">
+            Este candidato está aguardando o envio da mensagem de boas-vindas.
+            {% if candidato.ultima_tentativa_mensagem %}
+            <br>Última tentativa: {{ candidato.ultima_tentativa_mensagem|date:"d/m/Y H:i" }}
+            {% endif %}
+        </p>
+        <a href="{% url 'iniciar_processo' candidato.id %}" 
+           class="mt-2 inline-block bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">
+            Iniciar processo
+        </a>
+    </div>
+    {% endif %}
+
+    {% if candidato.status == 'rejeitado' %}
+    <div class="p-4 rounded-lg mb-4 border" style="background-color: #a6aebe; border-color: #a6aebe;">
+        <p class="font-semibold" style="color: #000000;">
+            Este candidato foi <span style="font-weight: bold;">rejeitado</span> no processo seletivo.
+            {% if candidato.ultima_tentativa_mensagem %}
+            <br>Última atualização: {{ candidato.ultima_tentativa_mensagem|date:"d/m/Y H:i" }}
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+ 
+    <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="p-4 sm:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Informações Pessoais</h2>
+                    <p><span class="font-medium">Nome:</span> {{ candidato.nome }}</p>
+                    <p><span class="font-medium">Email:</span> {{ candidato.email }}</p>
+                    <p><span class="font-medium">Telefone:</span> {{ candidato.telefone }}</p>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Status do Processo</h2>
+                    <p>
+                        <span class="font-medium">Status:</span>
+                        {% if candidato.status == 'ativo' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Ativo
+                        </span>
+                        {% elif candidato.status == 'em_andamento' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Em Andamento
+                        </span>
+                        {% elif candidato.status == 'documentos_pendentes' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                            Docs Pendentes
+                        </span>
+                        {% elif candidato.status == 'documentos_invalidos' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Docs Inválidos
+                        </span>
+                        {% elif candidato.status == 'concluido' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Concluído
+                        </span>
+                        {% elif candidato.status == 'rejeitado' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
+                            style="background-color: #a6aebe; color: #000000;">
+                            Rejeitado
+                        </span>
+                        {% endif %}
+                    </p>
+                    <p><span class="font-medium">Documentos:</span> {{ candidato.status_documentos_display }}</p>
+                    <p><span class="font-medium">Data de Cadastro:</span> {{ candidato.data_cadastro|date:"d/m/Y H:i" }}</p>
+                    <p><span class="font-medium">Última Atualização:</span> {{ candidato.data_ultima_atualizacao|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                <h2 class="text-lg font-semibold">Documentos</h2>
+                <div class="flex gap-2">
+                    <a href="{% url 'timeline_candidato' candidato.id %}" class="bg-indigo-500 hover:bg-indigo-600 text-white py-1.5 px-3 rounded text-sm">
+                        <i class="fas fa-history mr-1"></i> Histórico de Modificações
+                    </a>
+                    <a href="{% url 'novo_documento' candidato.id %}" class="bg-green-500 hover:bg-green-600 text-white py-1.5 px-3 rounded text-sm flex items-center">
+                        <i class="fas fa-plus mr-1"></i> Adicionar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Versão para desktop (tabela) - esconde em telas pequenas -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tipo
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Arquivo
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Data de Envio
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Ações
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for documento in candidato.documentos.all %}
+                        <tr class="cursor-pointer hover:bg-gray-50" onclick="window.location='{% url 'editar_documento' candidato.id documento.id %}'">
+
+                            <!-- <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm {% if documento.tipo.obrigatorio %}font-bold{% else %}font-medium{% endif %} text-gray-900">{{ documento.tipo.get_nome_exibicao }}</div>
+                            </td> -->
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm {% if documento.tipo.obrigatorio %}font-bold{% else %}font-medium{% endif %} text-gray-900">
+                                    {% if documento.tipo.obrigatorio %}
+                                        <span aria-label="obrigatório" title="Obrigatório">*</span>
+                                    {% endif %}
+                                    {{ documento.tipo.get_nome_exibicao }}
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
+                                <select 
+                                    class="status-select text-xs rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500"
+                                    data-documento-id="{{ documento.id }}"
+                                    data-candidato-id="{{ candidato.id }}"
+                                    style="background-color: {% if documento.status == 'pendente' %}#f3f4f6; color: #1f2937{% elif documento.status == 'recebido' %}#dbeafe; color: #1e40af{% elif documento.status == 'invalido' %}#fee2e2; color: #991b1b{% elif documento.status == 'validado' %}#d1fae5; color: #065f46{% elif documento.status == 'nao_possui' %}#fef3c7; color: #92400e{% endif %}">
+                                    <option value="pendente" {% if documento.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                                    <option value="recebido" {% if documento.status == 'recebido' %}selected{% endif %}>Recebido</option>
+                                    <option value="invalido" {% if documento.status == 'invalido' %}selected{% endif %}>Inválido</option>
+                                    <option value="validado" {% if documento.status == 'validado' %}selected{% endif %}>Validado</option>
+                                    <option value="nao_possui" {% if documento.status == 'nao_possui' %}selected{% endif %}>Não Possui</option>
+                                </select>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if documento.arquivo %}
+                                <a href="{{ documento.arquivo.url }}" target="_blank" class="text-blue-600 hover:text-blue-900" onclick="event.stopPropagation()">
+                                    <i class="fas fa-file mr-1"></i> Ver arquivo
+                                </a>
+                                
+                                {% else %}
+                                <span class="text-gray-400">Nenhum arquivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if documento.data_envio %}
+                                {{ documento.data_envio|date:"d/m/Y H:i" }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onclick="event.stopPropagation()">
+                                <a href="{% url 'editar_documento' candidato.id documento.id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">
+                                    <i class="fas fa-edit"></i>
+                                </a> 
+                                <!-- <button onclick="confirmarExclusao({{ documento.id }}); event.stopPropagation();" 
+                                    class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </button>  -->
+                                <button 
+                                    data-url="{% url 'editar_documento' candidato.id documento.id %}" 
+                                    onclick="abrirModalExclusao(this); event.stopPropagation();" 
+                                    class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                Nenhum documento cadastrado
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Versão para mobile (cards) - mostra apenas em telas pequenas -->
+            <div class="md:hidden space-y-4">
+                {% for documento in candidato.documentos.all %}
+                <div class="bg-white border rounded-lg p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <!-- <div class="text-sm {% if documento.tipo.obrigatorio %}font-bold{% else %}font-medium{% endif %} text-gray-900">{{ documento.tipo.get_nome_exibicao }}</div> -->
+                    
+                        <div class="text-sm {% if documento.tipo.obrigatorio %}font-bold{% else %}font-medium{% endif %} text-gray-900">
+                            {% if documento.tipo.obrigatorio %}*{% endif %}
+                            {{ documento.tipo.get_nome_exibicao }}
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'editar_documento' candidato.id documento.id %}" class="text-indigo-600 hover:text-indigo-900 p-1">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <!-- <button onclick="confirmarExclusao({{ documento.id }});" 
+                                class="text-red-600 hover:text-red-900 p-1">
+                                <i class="fas fa-trash"></i>
+                            </button> -->
+                            <button 
+                                data-url="{% url 'editar_documento' candidato.id documento.id %}" 
+                                onclick="abrirModalExclusao(this);" 
+                                class="text-red-600 hover:text-red-900 p-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <select 
+                            class="status-select text-xs rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 w-full"
+                            data-documento-id="{{ documento.id }}"
+                            data-candidato-id="{{ candidato.id }}"
+                            style="background-color: {% if documento.status == 'pendente' %}#f3f4f6; color: #1f2937{% elif documento.status == 'recebido' %}#dbeafe; color: #1e40af{% elif documento.status == 'invalido' %}#fee2e2; color: #991b1b{% elif documento.status == 'validado' %}#d1fae5; color: #065f46{% elif documento.status == 'nao_possui' %}#fef3c7; color: #92400e{% endif %}">
+                            <option value="pendente" {% if documento.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="recebido" {% if documento.status == 'recebido' %}selected{% endif %}>Recebido</option>
+                            <option value="invalido" {% if documento.status == 'invalido' %}selected{% endif %}>Inválido</option>
+                            <option value="validado" {% if documento.status == 'validado' %}selected{% endif %}>Validado</option>
+                            <option value="nao_possui" {% if documento.status == 'nao_possui' %}selected{% endif %}>Não Possui</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex flex-col space-y-2 text-sm text-gray-500">
+                        <div>
+                            {% if documento.arquivo %}
+                            <a href="{{ documento.arquivo.url }}" target="_blank" class="text-blue-600 hover:text-blue-900 flex items-center">
+                                <i class="fas fa-file mr-1"></i> Ver arquivo
+                            </a>
+                            {% else %}
+                            <span class="text-gray-400 flex items-center">
+                                <i class="fas fa-file mr-1"></i> Nenhum arquivo
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            {% if documento.data_envio %}
+                            {{ documento.data_envio|date:"d/m/Y H:i" }}
+                            {% else %}
+                            Não enviado
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bg-white border rounded-lg p-4 shadow-sm text-center text-sm text-gray-500">
+                    Nenhum documento cadastrado
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão do documento -->
+<div id="modal-exclusao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg m-4">
+        <h3 class="text-lg font-bold mb-4">Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja excluir este documento?</p>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="fecharModal()" 
+                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Cancelar
+            </button>
+            <form id="form-exclusao" method="post" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="delete" value="1">
+                <button type="submit" 
+                        class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    Excluir
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão do candidato -->
+<div id="modal-exclusao-candidato" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 max-w-full m-4 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-bold mb-4">Confirmar Exclusão</h3>
+        <p>Tem certeza que deseja excluir este candidato? Esta ação não pode ser desfeita.</p>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="document.getElementById('modal-exclusao-candidato').classList.add('hidden')"
+                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Cancelar
+            </button>
+            <form method="post" action="{% url 'excluir_candidato' candidato.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    Excluir
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para pausar cobrança -->
+<div id="modal-pausar-cobranca" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg m-4 max-w-md w-full">
+        <h3 class="text-lg font-bold mb-4">Pausar Cobrança Automática</h3>
+        <p class="mb-4">Deseja pausar a cobrança automática para {{ candidato.nome }}?</p>
+        
+        <form method="post" action="{% url 'pausar_cobranca_candidato' candidato.id %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="motivo_pausa" class="block text-sm font-medium text-gray-700 mb-2">
+                    Motivo da pausa (opcional):
+                </label>
+                <textarea 
+                    id="motivo_pausa" 
+                    name="motivo_pausa" 
+                    rows="3" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                    placeholder="Digite o motivo da pausa (pode ficar em branco)"></textarea>
+            </div>
+            
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="fecharModalPausarCobranca()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                    <i class="fas fa-pause mr-1"></i> Pausar Cobrança
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para invalidar documento -->
+<div id="modal-invalidar-documento" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg m-4 max-w-md w-full">
+        <h3 class="text-lg font-bold mb-4">Invalidar Documento</h3>
+        <p class="mb-4">Deseja invalidar o documento <strong id="nome-documento-invalidar"></strong>?</p>
+        
+        <div class="mb-4">
+            <label for="motivo_invalidacao" class="block text-sm font-medium text-gray-700 mb-2">
+                Motivo da invalidação (opcional):
+            </label>
+            <textarea 
+                id="motivo_invalidacao" 
+                rows="3" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="Digite o motivo da invalidação (pode ficar em branco)"></textarea>
+        </div>
+        
+        <div class="mb-4">
+            <label class="flex items-center">
+                <input 
+                    type="checkbox" 
+                    id="enviar_mensagem_whatsapp" 
+                    checked 
+                    class="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                <span class="text-sm text-gray-700">Enviar mensagem WhatsApp para o candidato</span>
+            </label>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="fecharModalInvalidar()" 
+                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Cancelar
+            </button>
+            <button type="button" onclick="confirmarInvalidacao()" 
+                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                <i class="fas fa-times mr-1"></i> Invalidar Documento
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let documentoParaInvalidar = null;
+    let selectParaInvalidar = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar os selects de status
+        const statusSelects = document.querySelectorAll('.status-select');
+        
+        statusSelects.forEach(select => {
+            // Salvar o valor original para comparação
+            select.dataset.originalValue = select.value;
+            
+            // Adicionar evento de mudança
+            select.addEventListener('change', function() {
+                const documentoId = this.dataset.documentoId;
+                const candidatoId = this.dataset.candidatoId;
+                const novoStatus = this.value;
+                
+                if (novoStatus === 'invalido') {
+                    // Salvar referências para usar no modal
+                    documentoParaInvalidar = {
+                        id: documentoId,
+                        candidatoId: candidatoId,
+                        nome: this.closest('tr') ? 
+                              this.closest('tr').querySelector('td:first-child .text-sm').textContent.trim() :
+                              this.closest('.bg-white').querySelector('.text-sm').textContent.trim()
+                    };
+                    selectParaInvalidar = this;
+                    
+                    // Mostrar nome do documento no modal
+                    document.getElementById('nome-documento-invalidar').textContent = documentoParaInvalidar.nome;
+                    
+                    // Abrir modal
+                    document.getElementById('modal-invalidar-documento').classList.remove('hidden');
+                    
+                    // Reverter o select para o valor original temporariamente
+                    this.value = this.dataset.originalValue;
+                    return;
+                }
+                
+                // Para outros status, processar normalmente
+                // Atualizar a cor de fundo com base no novo status
+                atualizarCorStatus(this, novoStatus);
+                
+                // Enviar a atualização para o servidor
+                atualizarStatusDocumento(documentoId, candidatoId, novoStatus);
+            });
+        });
+    });
+    
+    function confirmarInvalidacao() {
+        if (!documentoParaInvalidar || !selectParaInvalidar) return;
+        
+        const motivo = document.getElementById('motivo_invalidacao').value.trim();
+        const enviarMensagem = document.getElementById('enviar_mensagem_whatsapp').checked;
+        
+        // Atualizar visualmente o select
+        selectParaInvalidar.value = 'invalido';
+        atualizarCorStatus(selectParaInvalidar, 'invalido');
+        
+        // Enviar para o servidor com motivo e controle de mensagem
+        atualizarStatusDocumentoComMotivo(
+            documentoParaInvalidar.id, 
+            documentoParaInvalidar.candidatoId, 
+            'invalido', 
+            motivo,
+            enviarMensagem
+        );
+        
+        // Fechar modal
+        fecharModalInvalidar();
+    }
+    
+    function fecharModalInvalidar() {
+        document.getElementById('modal-invalidar-documento').classList.add('hidden');
+        document.getElementById('motivo_invalidacao').value = '';
+        document.getElementById('enviar_mensagem_whatsapp').checked = true;
+        documentoParaInvalidar = null;
+        selectParaInvalidar = null;
+    }
+    
+    function atualizarStatusDocumentoComMotivo(documentoId, candidatoId, novoStatus, motivo, enviarMensagem) {
+        // Mostrar indicador de carregamento
+        const loadingToast = document.createElement('div');
+        loadingToast.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        loadingToast.textContent = enviarMensagem ? 'Invalidando documento e enviando WhatsApp...' : 'Invalidando documento...';
+        document.body.appendChild(loadingToast);
+        
+        // Preparar os dados para envio
+        const data = {
+            status: novoStatus,
+            motivo: motivo,
+            enviar_mensagem: enviarMensagem
+        };
+        
+        // Enviar a requisição
+        fetch(`/candidatos/${candidatoId}/documentos/${documentoId}/atualizar-status/`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remover o indicador de carregamento
+            document.body.removeChild(loadingToast);
+            
+            // Mostrar mensagem de sucesso ou erro
+            const toast = document.createElement('div');
+            if (data.success) {
+                toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                toast.textContent = data.message || (enviarMensagem ? 'Documento invalidado e mensagem WhatsApp enviada!' : 'Documento invalidado!');
+                
+                // Recarregar a página após 2 segundos para atualizar o status do candidato
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                toast.textContent = data.error || 'Erro ao invalidar documento.';
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Remover a mensagem após 4 segundos
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 4000);
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            document.body.removeChild(loadingToast);
+            
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+            toast.textContent = 'Erro ao invalidar documento.';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 3000);
+        });
+    }
+    
+    function atualizarCorStatus(select, novoStatus) {
+        if (novoStatus === 'pendente') {
+            select.style.backgroundColor = '#f3f4f6';
+            select.style.color = '#1f2937';
+        } else if (novoStatus === 'recebido') {
+            select.style.backgroundColor = '#dbeafe';
+            select.style.color = '#1e40af';
+        } else if (novoStatus === 'invalido') {
+            select.style.backgroundColor = '#fee2e2';
+            select.style.color = '#991b1b';
+        } else if (novoStatus === 'validado') {
+            select.style.backgroundColor = '#d1fae5';
+            select.style.color = '#065f46';
+        } else if (novoStatus === 'nao_possui') {
+            select.style.backgroundColor = '#fef3c7';
+            select.style.color = '#92400e';
+        }        
+    }
+    
+    // Função para atualizar o status do documento via AJAX (para status que não são invalidação)
+    function atualizarStatusDocumento(documentoId, candidatoId, novoStatus) {
+        // Mostrar indicador de carregamento
+        const loadingToast = document.createElement('div');
+        loadingToast.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        loadingToast.textContent = 'Atualizando...';
+        document.body.appendChild(loadingToast);
+        
+        // Preparar os dados para envio
+        const formData = new FormData();
+        formData.append('status', novoStatus);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        // Enviar a requisição
+        fetch(`/candidatos/${candidatoId}/documentos/${documentoId}/atualizar-status/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remover o indicador de carregamento
+            document.body.removeChild(loadingToast);
+            
+            // Mostrar mensagem de sucesso ou erro
+            const toast = document.createElement('div');
+            if (data.success) {
+                toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                toast.textContent = 'Status atualizado com sucesso!';
+                
+                // Recarregar a página após 1 segundo para atualizar o status do candidato
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                toast.textContent = data.error || 'Erro ao atualizar status.';
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Remover a mensagem após 3 segundos
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 3000);
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            document.body.removeChild(loadingToast);
+            
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+            toast.textContent = 'Erro ao atualizar status.';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 3000);
+        });
+    }
+    
+    function confirmarExclusaoCandidato() {
+        document.getElementById('modal-exclusao-candidato').classList.remove('hidden');
+    }
+    
+    function confirmarExclusao(documentoId) {
+        document.getElementById('modal-exclusao').classList.remove('hidden');
+        document.getElementById('form-exclusao').action = 
+            "{% url 'editar_documento' candidato.id 0 %}".replace('0', documentoId);
+    }
+
+    function abrirModalExclusao(botao) {
+        const url = botao.getAttribute('data-url');
+        document.getElementById('form-exclusao').action = url;
+        document.getElementById('modal-exclusao').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+        document.getElementById('modal-exclusao').classList.add('hidden');
+    }
+
+    function abrirModalPausarCobranca() {
+        document.getElementById('modal-pausar-cobranca').classList.remove('hidden');
+    }
+    
+    function fecharModalPausarCobranca() {
+        document.getElementById('modal-pausar-cobranca').classList.add('hidden');
+    }
+    
+    // Fechar modal ao clicar fora dele
+    document.getElementById('modal-pausar-cobranca').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharModalPausarCobranca();
+        }
+    });
+    
+    document.getElementById('modal-invalidar-documento').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharModalInvalidar();
+        }
+    });
+</script>
+{% endblock %}
