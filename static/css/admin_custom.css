@@ -1,0 +1,33 @@
+.iniciar-processo {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.iniciar-processo:hover {
+    background-color: #218838;
+}
+
+/* Status colors */
+.status-aguardando_inicio {
+    color: #ffc107;
+}
+
+.status-em_andamento {
+    color: #17a2b8;
+}
+
+.status-documentos_pendentes {
+    color: #dc3545;
+}
+
+.status-documentos_invalidos {
+    color: #dc3545;
+}
+
+.status-concluido {
+    color: #28a745;
+}

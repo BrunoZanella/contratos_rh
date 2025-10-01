@@ -1,0 +1,31 @@
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-aguardando_inicio {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.status-em_andamento {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+.status-documentos_pendentes {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
+
+.status-documentos_invalidos {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
+
+.status-concluido {
+    background-color: #D1FAE5;
+    color: #065F46;
+}

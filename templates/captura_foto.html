@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Captura de Foto{% endblock %}
+
+{% block content %}
+<style>
+    .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+    
+    #video {
+        width: 100%;
+        border-radius: 8px;
+    }
+    
+    #canvas {
+        display: none;
+    }
+    
+    .face-guide {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        height: 260px;
+        border: 2px solid #3B82F6;
+        border-radius: 8px;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    
+    .face-guide.aligned {
+        border-color: #10B981;
+    }
+    
+    .face-guide.not-aligned {
+        border-color: #EF4444;
+    }
+    
+    .status-indicator {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: #FEF3C7;
+        color: #92400E;
+        transition: all 0.3s ease;
+    }
+    
+    .status-indicator.ready {
+        background-color: #D1FAE5;
+        color: #065F46;
+    }
+    
+    .preview-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 50;
+    }
+    
+    .preview-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 40px auto;
+    }
+    
+    .preview-image {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        display: block;
+        border-radius: 8px;
+    }
+    
+    .instructions {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 14px;
+        text-align: center;
+        width: max-content;
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold">Captura de Foto</h1>
+        <p class="text-gray-600">Posicione seu rosto dentro da área indicada</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="camera-container mb-4">
+            <video id="video" autoplay playsinline></video>
+            <div class="face-guide"></div>
+            <div id="statusIndicator" class="status-indicator">
+                Posicione seu rosto
+            </div>
+            <div class="instructions">
+                <i class="fas fa-info-circle mr-1"></i>
+                Mantenha seu rosto centralizado e bem iluminado
+            </div>
+        </div>
+        
+        <div class="text-center space-y-4">
+            <button id="switchCamera" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                <i class="fas fa-sync mr-1"></i> Trocar Câmera
+            </button>
+        </div>
+        
+        <div class="mt-6">
+            <h3 class="font-semibold mb-2">Dicas para uma boa foto:</h3>
+            <ul class="list-disc list-inside text-gray-600 space-y-1">
+                <li>Procure um local bem iluminado</li>
+                <li>Mantenha uma expressão neutra</li>
+                <li>Olhe diretamente para a câmera</li>
+                <li>Não use óculos escuros ou chapéu</li>
+                <li>Mantenha o rosto centralizado na moldura</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Canvas para processamento -->
+<canvas id="canvas" style="display: none;"></canvas>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="preview-container">
+    <div class="preview-content">
+        <h3 class="text-lg font-semibold mb-4">Confirmar Foto</h3>
+        <img id="previewImage" class="preview-image mb-4" src="/placeholder.svg" alt="Preview da foto">
+        <div class="flex justify-end gap-2">
+            <button onclick="retakePhoto()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Tirar Novamente
+            </button>
+            <button onclick="savePhoto()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Adicione este modal de permissão -->
+<div id="permissionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg m-4 max-w-md">
+        <h3 class="text-lg font-bold mb-4">Permissão da Câmera Necessária</h3>
+        <div class="space-y-4">
+            <p>Para tirar sua foto, precisamos da permissão para acessar sua câmera. Siga os passos:</p>
+            
+            <ol class="list-decimal list-inside space-y-2">
+                <li>Clique no ícone de cadeado/informação na barra de endereço</li>
+                <li>Procure por "Câmera" nas permissões</li>
+                <li>Selecione "Permitir"</li>
+                <li>Recarregue a página</li>
+            </ol>
+            
+            <div class="mt-4">
+                <img src="{% static 'images/logo.png' %}" alt="Exemplo de permissão" class="mx-auto rounded-lg shadow-md">
+            </div>
+            
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="window.location.reload()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Recarregar Página
+                </button>
+                <button onclick="requestCameraPermission()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Tentar Novamente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+
+<script>
+    let permissionModal;
+    
+    async function requestCameraPermission() {
+        try {
+            const result = await navigator.permissions.query({ name: 'camera' });
+            
+            if (result.state === 'denied') {
+                permissionModal.style.display = 'flex';
+                return false;
+            }
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop());
+            permissionModal.style.display = 'none';
+            return true;
+        } catch (error) {
+            console.error('Erro ao verificar permissão:', error);
+            permissionModal.style.display = 'flex';
+            return false;
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        permissionModal = document.getElementById('permissionModal');
+        permissionModal.style.display = 'none';
+        
+        // Verificar permissão ao carregar
+        requestCameraPermission();
+    });
+</script>
+
+<script>
+let video;
+let canvas;
+let detector;
+let currentStream;
+let isProcessing = false;
+let autoCapture = true;
+
+async function setupCamera() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    
+    try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: 640,
+                height: 480,
+                facingMode: 'user'
+            }
+        });
+        video.srcObject = currentStream;
+        
+        return new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                resolve(video);
+            };
+        });
+    } catch (error) {
+        console.error('Erro ao acessar câmera:', error);
+        alert('Erro ao acessar câmera. Verifique se você concedeu as permissões necessárias.');
+    }
+}
+
+async function loadFaceDetector() {
+    try {
+        detector = await blazeface.load();
+    } catch (error) {
+        console.error('Erro ao carregar detector facial:', error);
+        alert('Erro ao carregar o detector facial. Por favor, recarregue a página.');
+    }
+}
+
+function updateStatus(isAligned) {
+    const statusIndicator = document.getElementById('statusIndicator');
+    const faceGuide = document.querySelector('.face-guide');
+    
+    if (isAligned) {
+        statusIndicator.textContent = 'Rosto Detectado';
+        statusIndicator.classList.add('ready');
+        faceGuide.classList.add('aligned');
+        faceGuide.classList.remove('not-aligned');
+        
+        if (autoCapture) {
+            setTimeout(capturePhoto, 500);
+            autoCapture = false;
+        }
+    } else {
+        statusIndicator.textContent = 'Alinhe seu rosto';
+        statusIndicator.classList.remove('ready');
+        faceGuide.classList.remove('aligned');
+        faceGuide.classList.add('not-aligned');
+    }
+}
+
+async function detectFaces() {
+    if (isProcessing || !detector) return;
+    
+    isProcessing = true;
+    
+    try {
+        const predictions = await detector.estimateFaces(video, false);
+        
+        if (predictions.length === 1) {
+            const face = predictions[0];
+            const videoRect = video.getBoundingClientRect();
+            const guideRect = document.querySelector('.face-guide').getBoundingClientRect();
+            
+            // Converter coordenadas do vídeo para coordenadas da página
+            const faceX = (face.topLeft[0] + face.bottomRight[0]) / 2;
+            const faceY = (face.topLeft[1] + face.bottomRight[1]) / 2;
+            const faceWidth = face.bottomRight[0] - face.topLeft[0];
+            const faceHeight = face.bottomRight[1] - face.topLeft[1];
+            
+            // Verificar se o rosto está centralizado e tem o tamanho adequado
+            const isAligned = (
+                faceX >= guideRect.left - videoRect.left - 20 &&
+                faceX <= guideRect.right - videoRect.left + 20 &&
+                faceY >= guideRect.top - videoRect.top - 20 &&
+                faceY <= guideRect.bottom - videoRect.top + 20 &&
+                faceWidth >= guideRect.width * 0.6 &&
+                faceWidth <= guideRect.width * 1.2
+            );
+            
+            updateStatus(isAligned);
+        } else {
+            updateStatus(false);
+        }
+    } catch (error) {
+        console.error('Erro na detecção facial:', error);
+    }
+    
+    isProcessing = false;
+    requestAnimationFrame(detectFaces);
+}
+
+function capturePhoto() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    
+    // Configurar o canvas com as dimensões do vídeo
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Desenhar o frame atual do vídeo no canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Converter para base64
+    const imageData = canvas.toDataURL('image/jpeg');
+    
+    // Mostrar preview
+    showPreview(imageData);
+}
+
+function showPreview(imageData) {
+    const previewModal = document.getElementById('previewModal');
+    const previewImage = document.getElementById('previewImage');
+    
+    previewImage.src = imageData;
+    previewModal.style.display = 'block';
+}
+
+function retakePhoto() {
+    const previewModal = document.getElementById('previewModal');
+    previewModal.style.display = 'none';
+    autoCapture = true;
+}
+
+async function savePhoto() {
+    const previewImage = document.getElementById('previewImage');
+    const formData = new FormData();
+    
+    // Converter base64 para blob
+    const response = await fetch(previewImage.src);
+    const blob = await response.blob();
+    
+    formData.append('photo', blob, 'face.jpg');
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    try {
+        const response = await fetch('{% url "salvar_foto" candidato.id %}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.href = '{% url "detalhe_candidato" candidato.id %}';
+        } else {
+            alert('Erro ao salvar foto: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Erro ao salvar foto:', error);
+        alert('Erro ao salvar foto. Por favor, tente novamente.');
+    }
+}
+
+document.getElementById('switchCamera').addEventListener('click', async () => {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+    }
+    
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length > 1) {
+            const currentFacingMode = currentStream.getVideoTracks()[0].getSettings().facingMode;
+            const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            
+            currentStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: 640,
+                    height: 480,
+                    facingMode: newFacingMode
+                }
+            });
+            
+            video.srcObject = currentStream;
+        }
+    } catch (error) {
+        console.error('Erro ao trocar câmera:', error);
+        alert('Erro ao trocar câmera. Por favor, tente novamente.');
+    }
+});
+
+// Inicialização
+async function init() {
+    await setupCamera();
+    await loadFaceDetector();
+    detectFaces();
+}
+
+init();
+</script>
+{% endblock %}

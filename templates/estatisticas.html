@@ -1,0 +1,1205 @@
+{% extends 'base.html' %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #eef2ff;
+        --success: #10b981;
+        --success-light: #ecfdf5;
+        --warning: #f59e0b;
+        --warning-light: #fffbeb;
+        --danger: #ef4444;
+        --danger-light: #fef2f2;
+        --neutral: #6b7280;
+        --neutral-light: #f9fafb;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+        --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    body {
+        background-color: #f5f7fa;
+        color: #334155;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+    
+    .stat-card {
+        transition: all 0.2s ease;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--card-shadow-hover);
+    }
+    
+    .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .insight-card {
+        border-left: 4px solid;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .insight-card:hover {
+        transform: translateX(3px);
+    }
+    
+    .insight-card.positive {
+        border-color: var(--success);
+    }
+    
+    .insight-card.negative {
+        border-color: var(--danger);
+    }
+    
+    .insight-card.neutral {
+        border-color: var(--primary);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .tab-button {
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        color: var(--neutral);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .tab-button:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+        color: var(--primary);
+    }
+    
+    .tab-button.active {
+        background-color: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+    
+    .icon-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9999px;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge-blue {
+        background-color: var(--primary-light);
+        color: var(--primary);
+    }
+    
+    .badge-green {
+        background-color: var(--success-light);
+        color: var(--success);
+    }
+    
+    .badge-yellow {
+        background-color: var(--warning-light);
+        color: var(--warning);
+    }
+    
+    .badge-red {
+        background-color: var(--danger-light);
+        color: var(--danger);
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div class="mb-4 sm:mb-0">
+            <h1 class="text-3xl font-bold text-gray-900">Estatísticas</h1>
+            <p class="text-gray-600 mt-1">Análise de dados dos candidatos e documentos</p>
+        </div>
+        <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+            <button id="tab-resumo" class="tab-button active">Resumo</button>
+            <button id="tab-timeline" class="tab-button">Timeline</button>
+            <button id="tab-documentos" class="tab-button">Documentos</button>
+            <button id="tab-tendencias" class="tab-button">Tendências</button>
+            <button id="tab-funil" class="tab-button">Funil de Conversão</button>
+        </div>
+    </div>
+
+    <!-- Tab: Resumo -->
+    <div id="content-resumo" class="tab-content active">
+        <!-- Estatísticas Gerais -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card p-6" style="background-color: #eef2ff; border-color: #c7d2fe;">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Tempo Médio Total</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ tempo_medio_total }}</p>
+                    </div>
+                    <div class="icon-circle bg-primary-light">
+                        <i class="fas fa-clock text-primary"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Do cadastro à conclusão</p>
+                <div class="mt-2 text-xs">
+                    <span class="text-gray-600">Min: {{ tempo_min_total }} | Max: {{ tempo_max_total }}</span>
+                </div>
+            </div>
+            
+            <div class="stat-card p-6" style="background-color: #ecfdf5; border-color: #a7f3d0;">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Taxa de Conclusão</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ taxa_conclusao }}%</p>
+                    </div>
+                    <div class="icon-circle bg-success-light">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">{{ candidatos_concluidos }} de {{ total_candidatos }} candidatos</p>
+                <div class="mt-2">
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <!-- <div class="bg-success h-1.5 rounded-full" style="width: {{ taxa_conclusao }}%"></div> -->
+                        <div class="h-1.5 rounded-full"style="width: {{ taxa_conclusao_css }}; background-color:#10b981;"></div> {# #10b981 = emerald-500; troque se quiser outra cor #}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card p-6" style="background-color: #fffbeb; border-color: #fde68a;">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Documentos Pendentes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ docs_pendentes }}</p>
+                    </div>
+                    <div class="icon-circle bg-warning-light">
+                        <i class="fas fa-file-alt text-warning"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Aguardando envio ou validação</p>
+                <div class="mt-2">
+                    <span class="badge badge-yellow">
+                        <i class="fas fa-clock mr-1"></i> Aguardando
+                    </span>
+                </div>
+            </div>
+            
+            <div class="stat-card p-6" style="background-color: #fef2f2; border-color: #fecaca;">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Documentos Inválidos</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ docs_invalidos }}</p>
+                    </div>
+                    <div class="icon-circle bg-danger-light">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Precisam de correção</p>
+                <div class="mt-2">
+                    <span class="badge badge-red">
+                        <i class="fas fa-exclamation-circle mr-1"></i> Ação necessária
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights baseados na timeline -->
+        <div class="mb-8">
+            <h2 class="section-title">Insights do Processo</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% for insight in insights %}
+                <div class="card p-5 insight-card {{ insight.tipo }}">
+                    <h3 class="font-medium text-gray-900">{{ insight.titulo }}</h3>
+                    <p class="text-sm text-gray-600 mt-2">{{ insight.descricao }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Gráfico de Pizza - Status dos Candidatos -->
+            <div class="card p-6">
+                <h2 class="card-title">Distribuição por Status</h2>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras - Etapas que Mais Demoram -->
+            <div class="card p-6">
+                <h2 class="card-title">Tempo Médio por Etapa</h2>
+                <div class="chart-container">
+                    <canvas id="etapasChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Timeline -->
+    <div id="content-timeline" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Gráfico de Barras - Variabilidade de Tempo por Etapa -->
+            <div class="card p-6">
+                <h2 class="card-title">Variabilidade de Tempo por Etapa</h2>
+                <div class="chart-container">
+                    <canvas id="variabilidadeChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras - Gargalos do Processo -->
+            <div class="card p-6">
+                <h2 class="card-title">Principais Gargalos do Processo</h2>
+                <div class="chart-container">
+                    <canvas id="gargalosChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras - Eficiência por Dia da Semana -->
+            <div class="card p-6">
+                <h2 class="card-title">Validações por Dia da Semana</h2>
+                <div class="chart-container">
+                    <canvas id="diasSemanaChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Linha - Tempo Médio por Dia da Semana -->
+            <div class="card p-6">
+                <h2 class="card-title">Tempo Médio de Validação por Dia</h2>
+                <div class="chart-container">
+                    <canvas id="tempoMedioDiaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Documentos -->
+    <div id="content-documentos" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Gráfico de Doughnut - Distribuição de Tipos de Documentos -->
+            <div class="card p-6">
+                <h2 class="card-title">Distribuição de Tipos de Documentos</h2>
+                <div class="chart-container">
+                    <canvas id="tiposDocumentosChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras - Tempo Médio de Validação por Tipo de Documento -->
+            <div class="card p-6">
+                <h2 class="card-title">Tempo Médio de Validação por Tipo</h2>
+                <div class="chart-container">
+                    <canvas id="tempoValidacaoTipoChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Barras - Documentos Mais Problemáticos -->
+            <div class="card p-6">
+                <h2 class="card-title">Documentos Mais Problemáticos</h2>
+                <div class="chart-container">
+                    <canvas id="docsProblematicosChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Estatísticas de Rejeição -->
+            <div class="card p-6">
+                <h2 class="card-title">Estatísticas de Rejeição</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-700">Taxa de Rejeição:</span>
+                        <span class="font-bold text-gray-900">{{ taxa_rejeicao_docs }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-700">Documentos com Retrabalho:</span>
+                        <span class="font-bold text-gray-900">{{ total_docs_retrabalho }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-gray-700">Média de Tentativas:</span>
+                        <span class="font-bold text-gray-900">{{ media_invalidacoes }}</span>
+                    </div>
+                    <div class="mt-4 p-4 rounded-lg {% if taxa_rejeicao_docs > 20 %}bg-danger-light{% else %}bg-success-light{% endif %}">
+                        <p class="text-sm">
+                            {% if taxa_rejeicao_docs > 20 %}
+                            <i class="fas fa-exclamation-circle text-danger mr-1"></i> A taxa de rejeição está alta. Considere melhorar as instruções para os candidatos.
+                            {% else %}
+                            <i class="fas fa-check-circle text-success mr-1"></i> A taxa de rejeição está dentro do esperado.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Tendências -->
+    <div id="content-tendencias" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Gráfico de Linha - Tendência de Cadastros -->
+            <div class="card p-6">
+                <h2 class="card-title">Tendência de Cadastros</h2>
+                <div class="chart-container">
+                    <canvas id="tendenciaChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Linha - Tendência de Conclusões -->
+            <div class="card p-6">
+                <h2 class="card-title">Tendência de Conclusões</h2>
+                <div class="chart-container">
+                    <canvas id="conclusoesChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Linha - Taxa de Conversão Mensal -->
+            <div class="card p-6">
+                <h2 class="card-title">Taxa de Conversão Mensal (%)</h2>
+                <div class="chart-container">
+                    <canvas id="taxaConversaoChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Linha - Tempo Médio de Conclusão -->
+            <div class="card p-6">
+                <h2 class="card-title">Tempo Médio de Conclusão (dias)</h2>
+                <div class="chart-container">
+                    <canvas id="tempoMedioChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Funil de Conversão -->
+    <div id="content-funil" class="tab-content">
+        <div class="card p-6 mb-8">
+            <h2 class="card-title">Funil de Conversão</h2>
+            <div class="chart-container mb-6">
+                <canvas id="funilChart"></canvas>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {% for i in funil_taxas %}
+                <div class="bg-primary-light p-4 rounded-lg">
+                    <p class="text-sm text-primary mb-1">{{ funil_conversao_labels|safe }}[{{ forloop.counter0 }}]</p>
+                    <p class="text-xl font-bold text-gray-900">{{ i }}%</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <h2 class="card-title">Oportunidades de Melhoria</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% if oportunidades_melhoria|length > 0 %}
+                    {% for oportunidade in oportunidades_melhoria %}
+                    <div class="p-4 rounded-lg bg-gray-50 border-l-4 border-{{ oportunidade.cor }}-500">
+                        <h3 class="font-medium text-gray-900">{{ oportunidade.titulo }}</h3>
+                        <p class="text-sm text-gray-600 mt-2">
+                            {{ oportunidade.descricao }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-4 rounded-lg bg-gray-50 border-l-4 border-gray-500">
+                        <h3 class="font-medium text-gray-900">Sem oportunidades identificadas</h3>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Não há dados suficientes para identificar oportunidades de melhoria.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para os gráficos (recebidos da view)
+        const statusLabels = {{ status_labels|safe }};
+        const statusData = {{ status_data|safe }};
+        const statusColors = {{ status_colors|safe }};
+        
+        const etapasLabels = {{ etapas_labels|safe }};
+        const etapasData = {{ etapas_data|safe }};
+        const etapasStdDev = {{ etapas_std_dev|safe }};
+        const etapasMin = {{ etapas_min|safe }};
+        const etapasMax = {{ etapas_max|safe }};
+        
+        const gargalosLabels = {{ gargalos_labels|safe }};
+        const gargalosData = {{ gargalos_data|safe }};
+        
+        const mesesLabels = {{ meses_labels|safe }};
+        const cadastrosData = {{ cadastros_data|safe }};
+        const conclusoesData = {{ dados_conclusoes|safe }};
+        const taxaConversaoMensal = {{ taxa_conversao_mensal|safe }};
+        const tempoMedioData = {{ tempo_medio_data|safe }};
+
+        const tiposDocumentosLabels = {{ tipos_documentos_labels|safe }};
+        const tiposDocumentosData = {{ tipos_documentos_data|safe }};
+
+        const tempoMedioTipoLabels = {{ tempo_medio_tipo_labels|safe }};
+        const tempoMedioTipoData = {{ tempo_medio_tipo_data|safe }};
+        
+        const docsProblematicosLabels = {{ docs_problematicos_labels|safe }};
+        const docsProblematicosData = {{ docs_problematicos_data|safe }};
+        
+        const diasSemana = {{ dias_semana|safe }};
+        const diasSemanaData = {{ dias_semana_data|safe }};
+        const tempoMedioDiaSemana = {{ tempo_medio_dia_semana|safe }};
+        
+        const funilEtapas = {{ funil_etapas|safe }};
+        const funilDados = {{ funil_dados|safe }};
+        const funilTaxas = {{ funil_taxas|safe }};
+        const funilConversaoLabels = {{ funil_conversao_labels|safe }};
+        
+        const etapasDataFormatada = {{ etapas_data_formatada|safe }};
+        const etapasMinFormatada = {{ etapas_min_formatada|safe }};
+        const etapasMaxFormatada = {{ etapas_max_formatada|safe }};
+        const tempoMedioTipoDataFormatada = {{ tempo_medio_tipo_data_formatada|safe }};
+        
+        // Paleta de cores profissional e suave para documentos
+        const documentColors = [
+            '#4f46e5', // Indigo
+            '#0ea5e9', // Sky
+            '#10b981', // Emerald
+            '#f59e0b', // Amber
+            '#8b5cf6', // Violet
+            '#ec4899', // Pink
+            '#06b6d4', // Cyan
+            '#84cc16', // Lime
+            '#6366f1', // Indigo/Blue
+            '#14b8a6', // Teal
+            '#f97316', // Orange
+            '#8b5cf6'  // Purple
+        ];
+        
+        function formatarTempo(valorEmDias) {
+            if (valorEmDias === null || valorEmDias === undefined) return "N/A";
+            
+            const minutos = valorEmDias * 24 * 60;
+            
+            if (minutos < 60) {
+                return `${Math.round(minutos)} minutos`;
+            } else if (minutos < 1440) { // menos de 24 horas
+                const horas = Math.floor(minutos / 60);
+                const minutosRestantes = Math.round(minutos % 60);
+                return minutosRestantes > 0 ? `${horas}h ${minutosRestantes}min` : `${horas} horas`;
+            } else if (valorEmDias < 30) {
+                return `${Math.round(valorEmDias * 10) / 10} dias`;
+            } else {
+                const meses = Math.round(valorEmDias / 30 * 10) / 10;
+                return `${meses} meses`;
+            }
+        }
+
+        // Configurações globais do Chart.js
+        Chart.defaults.font.family = "'Inter', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        Chart.defaults.plugins.tooltip.titleColor = '#1e293b';
+        Chart.defaults.plugins.tooltip.bodyColor = '#334155';
+        Chart.defaults.plugins.tooltip.borderColor = 'rgba(0, 0, 0, 0.1)';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 6;
+        Chart.defaults.plugins.tooltip.displayColors = true;
+        Chart.defaults.plugins.tooltip.boxPadding = 6;
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.elements.line.tension = 0.3;
+        Chart.defaults.elements.line.borderWidth = 2;
+        Chart.defaults.elements.point.radius = 3;
+        Chart.defaults.elements.point.hoverRadius = 5;
+        Chart.defaults.elements.bar.borderRadius = 4;
+
+        // Configuração dos gráficos
+        const statusChart = new Chart(
+            document.getElementById('statusChart'),
+            {
+                type: 'pie',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: statusColors,
+                        borderWidth: 1,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                boxWidth: 12,
+                                boxHeight: 12
+                            }
+                        }
+                    }
+                }
+            }
+        );
+        
+        const etapasChart = new Chart(
+            document.getElementById('etapasChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: etapasLabels,
+                    datasets: [{
+                        label: 'Tempo Médio',
+                        data: etapasData,
+                        backgroundColor: '#4f46e5',
+                        borderColor: '#4338ca',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Dias',
+                                font: {
+                                    weight: 'normal'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const valor = context.raw;
+                                    if (etapasDataFormatada && etapasDataFormatada[context.dataIndex]) {
+                                        return etapasDataFormatada[context.dataIndex];
+                                    }
+                                    return formatarTempo(valor);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+        
+        // Novos gráficos
+        if (document.getElementById('variabilidadeChart')) {
+            new Chart(
+                document.getElementById('variabilidadeChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: etapasLabels,
+                        datasets: [{
+                            label: 'Mínimo',
+                            data: etapasMin,
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            borderWidth: 0
+                        }, {
+                            label: 'Médio',
+                            data: etapasData,
+                            backgroundColor: '#4f46e5',
+                            borderColor: '#4338ca',
+                            borderWidth: 0
+                        }, {
+                            label: 'Máximo',
+                            data: etapasMax,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Dias',
+                                    font: {
+                                        weight: 'normal'
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const valor = context.raw;
+                                        if (context.dataset.label === 'Mínimo' && etapasMinFormatada && etapasMinFormatada[context.dataIndex]) {
+                                            return etapasMinFormatada[context.dataIndex];
+                                        } else if (context.dataset.label === 'Máximo' && etapasMaxFormatada && etapasMaxFormatada[context.dataIndex]) {
+                                            return etapasMaxFormatada[context.dataIndex];
+                                        } else if (etapasDataFormatada && etapasDataFormatada[context.dataIndex]) {
+                                            return etapasDataFormatada[context.dataIndex];
+                                        }
+                                        return `${context.dataset.label}: ${formatarTempo(valor)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        if (document.getElementById('gargalosChart')) {
+            new Chart(
+                document.getElementById('gargalosChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: gargalosLabels,
+                        datasets: [{
+                            label: 'Tempo Médio (dias)',
+                            data: gargalosData,
+                            backgroundColor: '#f59e0b',
+                            borderColor: '#d97706',
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Tempo Médio: ${formatarTempo(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        indexAxis: 'y'
+                    }
+                }
+            );
+        }
+        
+        if (document.getElementById('diasSemanaChart')) {
+            new Chart(
+                document.getElementById('diasSemanaChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: diasSemana,
+                        datasets: [{
+                            label: 'Validações',
+                            data: diasSemanaData,
+                            backgroundColor: '#8b5cf6',
+                            borderColor: '#7c3aed',
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        if (document.getElementById('tempoMedioDiaChart')) {
+            new Chart(
+                document.getElementById('tempoMedioDiaChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: diasSemana,
+                        datasets: [{
+                            label: 'Tempo Médio (dias)',
+                            data: tempoMedioDiaSemana,
+                            fill: false,
+                            borderColor: '#ec4899',
+                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                            pointBackgroundColor: '#ec4899'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Tempo Médio: ${formatarTempo(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        if (document.getElementById('docsProblematicosChart')) {
+            new Chart(
+                document.getElementById('docsProblematicosChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: docsProblematicosLabels,
+                        datasets: [{
+                            label: 'Invalidações',
+                            data: docsProblematicosData,
+                            backgroundColor: '#ef4444',
+                            borderColor: '#dc2626',
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        indexAxis: 'y'
+                    }
+                }
+            );
+        }
+        
+        const tendenciaChart = new Chart(
+            document.getElementById('tendenciaChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: mesesLabels,
+                    datasets: [{
+                        label: 'Novos Candidatos',
+                        data: cadastrosData,
+                        fill: false,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        pointBackgroundColor: '#4f46e5'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            }
+        );
+        
+        if (document.getElementById('conclusoesChart')) {
+            new Chart(
+                document.getElementById('conclusoesChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: mesesLabels,
+                        datasets: [{
+                            label: 'Processos Concluídos',
+                            data: conclusoesData,
+                            fill: false,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            pointBackgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        if (document.getElementById('taxaConversaoChart')) {
+            new Chart(
+                document.getElementById('taxaConversaoChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: mesesLabels,
+                        datasets: [{
+                            label: 'Taxa de Conversão (%)',
+                            data: taxaConversaoMensal,
+                            fill: false,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            pointBackgroundColor: '#8b5cf6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        const tempoMedioChart = new Chart(
+            document.getElementById('tempoMedioChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: mesesLabels,
+                    datasets: [{
+                        label: 'Tempo Médio (dias)',
+                        data: tempoMedioData,
+                        fill: false,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Tempo Médio: ${formatarTempo(context.raw)}`;
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // Usando a nova paleta de cores para o gráfico de tipos de documentos
+        const tiposDocumentosChart = new Chart(
+            document.getElementById('tiposDocumentosChart'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: tiposDocumentosLabels,
+                    datasets: [{
+                        data: tiposDocumentosData,
+                        backgroundColor: documentColors.slice(0, tiposDocumentosLabels.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                boxWidth: 12,
+                                boxHeight: 12
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        const tempoValidacaoTipoChart = new Chart(
+            document.getElementById('tempoValidacaoTipoChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: tempoMedioTipoLabels,
+                    datasets: [{
+                        label: 'Tempo Médio',
+                        data: tempoMedioTipoData,
+                        backgroundColor: '#06b6d4',
+                        borderColor: '#0891b2',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Dias',
+                                font: {
+                                    weight: 'normal'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (tempoMedioTipoDataFormatada && tempoMedioTipoDataFormatada[context.dataIndex]) {
+                                        return tempoMedioTipoDataFormatada[context.dataIndex];
+                                    }
+                                    return `Tempo Médio: ${formatarTempo(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+        
+        if (document.getElementById('funilChart')) {
+            new Chart(
+                document.getElementById('funilChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: funilEtapas,
+                        datasets: [{
+                            label: 'Candidatos',
+                            data: funilDados,
+                            backgroundColor: '#4f46e5',
+                            borderColor: '#4338ca',
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        // Atualizar dinamicamente as taxas de conversão
+        const taxasContainer = document.querySelector('#content-funil .grid');
+        if (taxasContainer) {
+            taxasContainer.innerHTML = '';
+            
+            funilConversaoLabels.forEach((label, index) => {
+                const taxa = funilTaxas[index];
+                const div = document.createElement('div');
+                div.className = 'bg-primary-light p-4 rounded-lg';
+                div.innerHTML = `
+                    <p class="text-sm text-primary mb-1">${label}</p>
+                    <p class="text-xl font-bold text-gray-900">${taxa}%</p>
+                `;
+                taxasContainer.appendChild(div);
+            });
+        }
+        
+        // Tabs com persistência
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        // Função para ativar uma aba específica
+        function activateTab(tabId) {
+            const target = tabId.replace('tab-', 'content-');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById(target).classList.add('active');
+            
+            // Salvar a aba atual no localStorage
+            localStorage.setItem('currentTab', tabId);
+        }
+
+        // Adicionar event listeners para as abas
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                activateTab(tab.id);
+            });
+        });
+
+        // Verificar se há uma aba salva no localStorage
+        const savedTab = localStorage.getItem('currentTab');
+        if (savedTab && document.getElementById(savedTab)) {
+            activateTab(savedTab);
+        } else {
+            // Se não houver aba salva, ativar a primeira aba (resumo)
+            activateTab('tab-resumo');
+        }
+    });
+</script>
+{% endblock %}
+

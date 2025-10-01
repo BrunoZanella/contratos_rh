@@ -1,0 +1,688 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ avaliacao.primeira_segunda_avaliacao }}ª Avaliação de Período de Experiência - {{ avaliacao.colaborador }}{% endblock %}
+
+{% block content %}
+<div class="container my-3 my-md-5">
+    <div class="card shadow-lg border-0 rounded-lg">
+        <div class="card-header text-white py-4">
+            <h3 class="mb-0 text-center font-weight-bold">{{ avaliacao.primeira_segunda_avaliacao }}ª Avaliação de Período de Experiência</h3>
+            <p class="mb-0 text-center opacity-75 mt-2 h5">{{ avaliacao.colaborador }}</p>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-5">
+                <p class="h5 mb-1">Olá, <strong>{{ avaliacao.gestor_avaliador }}</strong>!</p>
+                <p class="text-muted">Agradecemos por sua colaboração no desenvolvimento de nossa equipe.</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Iniciativa</label>
+                  <p class="text-muted small mb-3">O colaborador demonstra proatividade e busca novas responsabilidades sem necessidade de ordens diretas?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="apresenta_iniciativa_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="apresenta_iniciativa" id="apresenta_iniciativa_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Organização</label>
+                  <p class="text-muted small mb-3">O colaborador consegue planejar e executar suas tarefas de forma estruturada e eficiente?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="organizado_atividades_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="organizado_atividades" id="organizado_atividades_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Adaptabilidade</label>
+                  <p class="text-muted small mb-3">O colaborador consegue se adaptar a novas situações, ferramentas e perfis de clientes com facilidade?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="adapta_novas_situacoes_clientes_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="adapta_novas_situacoes_clientes" id="adapta_novas_situacoes_clientes_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Interação com Colegas</label>
+                  <p class="text-muted small mb-3">O colaborador interage de forma positiva e construtiva com seus colegas de trabalho?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="interage_bem_colegas{{ value }}">
+                           <input class="visually-hidden" type="radio" name="interage_bem_colegas" id="interage_bem_colegas{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Aptidão para Liderança</label>
+                  <p class="text-muted small mb-3">O colaborador demonstra potencial para liderar, motivar e inspirar a equipe?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="aptidao_lideranca_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="aptidao_lideranca" id="aptidao_lideranca_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Talento Técnico</label>
+                  <p class="text-muted small mb-3">O colaborador possui as habilidades e o conhecimento técnico necessários para sua função?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="talento_para_funcao_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="talento_para_funcao" id="talento_para_funcao_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Pronto a colaborar</label>
+                  <p class="text-muted small mb-3">O colaborador está sempre disposto a colaborar com a equipe e ajudar os colegas?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="pronto_para_colaborar_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="pronto_para_colaborar" id="pronto_para_colaborar_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Entrega de Resultados</label>
+                  <p class="text-muted small mb-3">O colaborador atinge as metas e apresenta os resultados esperados para sua função?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="resultados_esperados_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="resultados_esperados" id="resultados_esperados_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Colaboração com a Empresa</label>
+                  <p class="text-muted small mb-3">O colaborador tem o hábito de colaborar com os demais membros da empresa, mesmo fora de sua equipe?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="colabora_membros_empresa_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="colabora_membros_empresa" id="colabora_membros_empresa_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Comportamento Ético</label>
+                  <p class="text-muted small mb-3">O colaborador age de acordo com os princípios éticos e os valores da empresa?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="comportamento_etico_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="comportamento_etico" id="comportamento_etico_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Persistência</label>
+                  <p class="text-muted small mb-3">O colaborador desiste com facilidade ao primeiro sinal de dificuldade?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="desiste_facil_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="desiste_facil" id="desiste_facil_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Redução de Despesas</label>
+                  <p class="text-muted small mb-3">O colaborador procura ativamente auxiliar na redução de despesas e desperdícios?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="reduz_despesas_desperdicios_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="reduz_despesas_desperdicios" id="reduz_despesas_desperdicios_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Comunicação</label>
+                  <p class="text-muted small mb-3">O colaborador sabe se comunicar de forma clara, objetiva e coerente?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="comunica_claro_coerente_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="comunica_claro_coerente" id="comunica_claro_coerente_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Gestão do Tempo</label>
+                  <p class="text-muted small mb-3">O colaborador sabe administrar seu tempo de forma eficaz para superar seus desafios e cumprir prazos?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="administra_tempo_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="administra_tempo" id="administra_tempo_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Autoconfiança</label>
+                  <p class="text-muted small mb-3">O colaborador demonstra confiança em suas próprias habilidades e decisões?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="autoconfiante_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="autoconfiante" id="autoconfiante_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Foco no Resultado do Grupo</label>
+                  <p class="text-muted small mb-3">O colaborador se empenha para que os resultados coletivos do grupo sejam os melhores possíveis?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="empenho_resultados_grupo_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="empenho_resultados_grupo" id="empenho_resultados_grupo_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Respeito a Opiniões Divergentes</label>
+                  <p class="text-muted small mb-3">O colaborador aceita opiniões diferentes da sua com facilidade e respeito?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="aceita_opinioes_divergentes_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="aceita_opinioes_divergentes" id="aceita_opinioes_divergentes_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Aceitação de Decisões do Grupo</label>
+                  <p class="text-muted small mb-3">O colaborador é relutante em aceitar e seguir as decisões acordadas pelo grupo?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="relutante_decisoes_grupo_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="relutante_decisoes_grupo" id="relutante_decisoes_grupo_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Exposição de Necessidades</label>
+                  <p class="text-muted small mb-3">Ao resolver as dificuldades do dia a dia, sabe expor suas necessidades e fazer perguntas que o auxiliem?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="expor_necessidades_perguntas_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="expor_necessidades_perguntas" id="expor_necessidades_perguntas_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Assiduidade</label>
+                  <p class="text-muted small mb-3">O colaborador cumpre seus horários e não apresenta faltas ou atrasos injustificados?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="assiduo{{ value }}">
+                           <input class="visually-hidden" type="radio" name="assiduo" id="assiduo{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Aceitação de Ordens</label>
+                  <p class="text-muted small mb-3">O colaborador aceita abertamente e segue as ordens que são dadas pelo seu gestor?</p>
+                  <div class="rating-group">
+                     {% for value in "12345"|make_list %}
+                     <label class="rating-option" for="aceita_ordens_gestor_{{ value }}">
+                           <input class="visually-hidden" type="radio" name="aceita_ordens_gestor" id="aceita_ordens_gestor_{{ value }}" value="{{ value }}" required>
+                           <div class="rating-content">
+                              <div class="rating-number">{{ value }}</div>
+                              <div class="rating-label">
+                                 {% if value == '1' %} Nunca {% elif value == '2' %} Raramente {% elif value == '3' %} Às vezes {% elif value == '4' %} Frequentemente {% else %} Sempre {% endif %}
+                              </div>
+                           </div>
+                     </label>
+                     {% endfor %}
+                  </div>
+               </div>
+               <div class="evaluation-item mb-5">
+                  <label for="sugestao_critica_elogio" class="h6 evaluation-label mb-2">Sugestões, Críticas ou Elogios</label>
+                  <p class="text-muted small mb-3">Descreva pontos fortes e oportunidades de melhoria para o colaborador. Este espaço é livre para seus comentários.</p>
+                  <textarea name="sugestao_critica_elogio" id="sugestao_critica_elogio" class="form-control" rows="5" placeholder="Digite seus comentários aqui..."></textarea>
+               </div>
+
+               <div class="evaluation-item mb-5">
+                  <label class="h6 evaluation-label mb-2">Decisão Final</label>
+                  <p class="text-muted small mb-3">Com base na avaliação, qual é a recomendação para o futuro do colaborador na empresa?</p>
+                  <div class="decision-group">
+                     <label class="decision-option_approve" for="aprova_demite_1">
+                           <input class="visually-hidden" type="radio" name="aprova_demite" id="aprova_demite_1" value="1" required>
+                           <div class="decision-content">
+                              <!-- <div class="decision-icon">👍</div> -->
+                              <i class="fa fa-check-circle decision-label" aria-hidden="true"></i>
+                              <div class="decision-label">Aprovar</div>
+
+                           </div>
+                     </label>
+                     <label class="decision-option_dismiss" for="aprova_demite_2">
+                           <input class="visually-hidden" type="radio" name="aprova_demite" id="aprova_demite_2" value="2" required>
+                           <div class="decision-content">
+                              <!-- <div class="decision-icon">👎</div> -->
+                              <i class="fa-solid fa-circle-xmark decision-label"></i>
+                              <div class="decision-label">Demitir</div>
+                           </div>
+                     </label>
+                  </div>
+                </div>
+
+               <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold submit-button">
+                  Enviar Avaliação
+               </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --primary-light: #e0e7ff;
+        --secondary-color: #10b981;
+        --danger-color: #ef4444;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-500: #6b7280;
+        --gray-800: #1f2937;
+        --card-bg: #ffffff;
+        --body-bg: #f9fafb;
+    }
+
+    body {
+        background-color: var(--body-bg);
+    }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        border-bottom: 0;
+    }
+
+    .evaluation-item {
+        border-bottom: 1px solid var(--gray-200);
+        padding-bottom: 1.5rem;
+    }
+    .evaluation-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .evaluation-label {
+        color: var(--gray-800);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .rating-group {
+        display: grid;
+        /* CHANGE: Makes the grid wrap automatically on smaller screens for better responsiveness */
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .rating-option {
+        cursor: pointer;
+    }
+
+    .rating-content {
+        background-color: var(--card-bg);
+        border: 2px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 1rem 0.25rem;
+        text-align: center;
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100px;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .rating-option:hover .rating-content {
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .rating-option input:checked + .rating-content {
+        border-color: var(--primary-color);
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .rating-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--gray-800);
+    }
+
+    .rating-option input:checked + .rating-content .rating-number {
+        color: white;
+    }
+
+    .rating-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-500);
+    }
+    
+    .rating-option input:checked + .rating-content .rating-label {
+        color: var(--primary-light);
+    }
+
+    .form-control {
+        border-radius: 0.75rem;
+        border: 2px solid var(--gray-200);
+        padding: 0.75rem 1rem;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    /* NEW: Style for the textarea, replacing inline style */
+    #sugestao_critica_elogio {
+        width: 100%;
+    }
+
+    .decision-group {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .decision-option_approve, .decision-option_dismiss {
+        cursor: pointer;
+    }
+
+    .decision-content {
+        border: 2px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .decision-option_approve:hover .decision-content {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .decision-option_dismiss:hover .decision-content {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .decision-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .decision-option_approve:hover .decision-content {
+        border-color: var(--secondary-color);
+    }
+    .decision-option_approve input:checked + .decision-content {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: white;
+    }
+
+    .decision-option_dismiss:hover .decision-content {
+        border-color: var(--danger-color);
+    }
+    .decision-option_dismiss input:checked + .decision-content {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease-in-out;
+        color: var(--primary-light); /* Moved color here */
+    }
+
+    .btn-primary:hover {
+        background-color: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-2px);
+    }
+    
+    /* NEW STYLE: This is the robust method to center the button */
+    .submit-button {
+        display: block; /* Allows margin auto to work */
+        width: 250px;
+        margin: 2rem auto 0 auto; /* top | horizontal | bottom */
+    }
+    
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem 1rem !important;
+        }
+
+        .card-header h3 {
+            font-size: 1.25rem;
+        }
+        .card-header p {
+            font-size: 1rem;
+        }
+
+        .rating-group {
+            gap: 0.5rem;
+        }
+        .rating-content {
+            padding: 0.75rem 0.1rem;
+            min-height: 85px;
+            border-radius: 0.5rem;
+        }
+        .rating-number {
+            font-size: 1.25rem;
+        }
+        .rating-label {
+            font-size: 0.65rem;
+            line-height: 1.2;
+        }
+        .decision-group {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        .evaluation-label {
+            font-size: 1rem;
+        }
+        
+        /* NEW: Makes the submit button full-width on mobile for better UX */
+        .btn-primary {
+            width: 100%;
+        }
+
+        .submit-button {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

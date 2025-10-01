@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Usuário{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Editar Usuário</h1>
+            <p class="text-gray-600 mt-1">Atualize as informações do usuário</p>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                ID: {{ usuario.id }}
+            </span>
+            {% if usuario.is_active %}
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
+                    <i class="fas fa-check-circle mr-1"></i> Ativo
+                </span>
+            {% else %}
+                <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full flex items-center">
+                    <i class="fas fa-times-circle mr-1"></i> Inativo
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card p-6 bg-white rounded-lg shadow-md">
+        <!-- Informações do usuário -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-2xl font-bold mr-4">
+                        {{ usuario.first_name|slice:":1" }}{{ usuario.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold">{{ usuario.get_full_name|default:usuario.username }}</h2>
+                        <p class="text-gray-600">{{ usuario.email }}</p>
+                        <p class="text-gray-500 text-sm">Membro desde {{ usuario.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end">
+                    <div class="text-sm text-gray-600 mb-1">
+                        <span class="font-medium">Último acesso:</span> 
+                        {% if usuario.last_login %}
+                            {{ usuario.last_login|date:"d/m/Y H:i" }}
+                        {% else %}
+                            Nunca acessou
+                        {% endif %}
+                    </div>
+                    <div class="text-sm">
+                        <span class="font-medium">Setor:</span> 
+                        <span id="current-setor" class="bg-gray-200 px-2 py-1 rounded">
+                            {% if form.setor.initial %}
+                                {{ form.setor.initial.nome }}
+                            {% else %}
+                                Sem setor
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Nome de Usuário <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                        {{ form.username }}
+                        <script>
+                            document.getElementById('{{ form.username.id_for_label }}').classList.add('pl-10', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-indigo-500', 'focus:ring-indigo-500', 'sm:text-sm');
+                        </script>
+                    </div>
+                    {% if form.username.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </div>
+                        {{ form.email }}
+                        <script>
+                            document.getElementById('{{ form.email.id_for_label }}').classList.add('pl-10', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-indigo-500', 'focus:ring-indigo-500', 'sm:text-sm');
+                        </script>
+                    </div>
+                    {% if form.email.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Nome
+                    </label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-id-card text-gray-400"></i>
+                        </div>
+                        {{ form.first_name }}
+                        <script>
+                            document.getElementById('{{ form.first_name.id_for_label }}').classList.add('pl-10', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-indigo-500', 'focus:ring-indigo-500', 'sm:text-sm');
+                        </script>
+                    </div>
+                    {% if form.first_name.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Sobrenome
+                    </label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-id-card text-gray-400"></i>
+                        </div>
+                        {{ form.last_name }}
+                        <script>
+                            document.getElementById('{{ form.last_name.id_for_label }}').classList.add('pl-10', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-indigo-500', 'focus:ring-indigo-500', 'sm:text-sm');
+                        </script>
+                    </div>
+                    {% if form.last_name.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.setor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Setor
+                    </label>
+                    <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-building text-gray-400"></i>
+                        </div>
+                        {{ form.setor }}
+                        <script>
+                            document.getElementById('{{ form.setor.id_for_label }}').classList.add('pl-10', 'block', 'w-full', 'rounded-md', 'border-gray-300', 'shadow-sm', 'focus:border-indigo-500', 'focus:ring-indigo-500', 'sm:text-sm');
+                            
+                            // Atualizar o setor exibido quando o select mudar
+                            document.getElementById('{{ form.setor.id_for_label }}').addEventListener('change', function() {
+                                var setorText = this.options[this.selectedIndex].text;
+                                document.getElementById('current-setor').textContent = setorText || 'Sem setor';
+                            });
+                        </script>
+                    </div>
+                    {% if form.setor.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.setor.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div class="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all" id="active-container">
+                    <div class="flex items-center h-5">
+                        {{ form.is_active }}
+                        <script>
+                            document.getElementById('{{ form.is_active.id_for_label }}').classList.add('rounded', 'border-gray-300', 'text-indigo-600', 'focus:ring-indigo-500', 'h-4', 'w-4');
+                            
+                            // Atualizar o estilo do container quando o checkbox mudar
+                            document.getElementById('{{ form.is_active.id_for_label }}').addEventListener('change', function() {
+                                var container = document.getElementById('active-container');
+                                var icon = document.getElementById('active-icon');
+                                
+                                if (this.checked) {
+                                    container.classList.add('bg-green-50', 'border-green-200');
+                                    container.classList.remove('bg-red-50', 'border-red-200');
+                                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                                } else {
+                                    container.classList.add('bg-red-50', 'border-red-200');
+                                    container.classList.remove('bg-green-50', 'border-green-200');
+                                    icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                                }
+                            });
+                            
+                            // Inicializar o estilo do container
+                            window.addEventListener('DOMContentLoaded', function() {
+                                var isActive = document.getElementById('{{ form.is_active.id_for_label }}').checked;
+                                var container = document.getElementById('active-container');
+                                var icon = document.getElementById('active-icon');
+                                
+                                if (isActive) {
+                                    container.classList.add('bg-green-50', 'border-green-200');
+                                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                                } else {
+                                    container.classList.add('bg-red-50', 'border-red-200');
+                                    icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                                }
+                            });
+                        </script>
+                    </div>
+                    <div class="ml-3">
+                        <div class="flex items-center">
+                            <label for="{{ form.is_active.id_for_label }}" class="font-medium text-gray-700">
+                                Usuário Ativo
+                            </label>
+                            <span id="active-icon" class="ml-2"></span>
+                        </div>
+                        <p class="text-gray-500 text-sm">
+                            Se desmarcado, o usuário não poderá acessar o sistema
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all" id="admin-container">
+                    <div class="flex items-center h-5">
+                        {{ form.is_staff }}
+                        <script>
+                            document.getElementById('{{ form.is_staff.id_for_label }}').classList.add('rounded', 'border-gray-300', 'text-indigo-600', 'focus:ring-indigo-500', 'h-4', 'w-4');
+                            
+                            // Atualizar o estilo do container quando o checkbox mudar
+                            document.getElementById('{{ form.is_staff.id_for_label }}').addEventListener('change', function() {
+                                var container = document.getElementById('admin-container');
+                                var icon = document.getElementById('admin-icon');
+                                
+                                if (this.checked) {
+                                    container.classList.add('bg-green-50', 'border-green-200');
+                                    container.classList.remove('bg-gray-50', 'border-gray-200');
+                                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                                } else {
+                                    container.classList.add('bg-gray-50', 'border-gray-200');
+                                    container.classList.remove('bg-green-50', 'border-green-200');
+                                    icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                                }
+                            });
+                            
+                            // Inicializar o estilo do container
+                            window.addEventListener('DOMContentLoaded', function() {
+                                var isAdmin = document.getElementById('{{ form.is_staff.id_for_label }}').checked;
+                                var container = document.getElementById('admin-container');
+                                var icon = document.getElementById('admin-icon');
+                                
+                                if (isAdmin) {
+                                    container.classList.add('bg-green-50', 'border-green-200');
+                                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                                } else {
+                                    container.classList.add('bg-gray-50', 'border-gray-200');
+                                    icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                                }
+                            });
+                        </script>
+                    </div>
+                    <div class="ml-3">
+                        <div class="flex items-center">
+                            <label for="{{ form.is_staff.id_for_label }}" class="font-medium text-gray-700">
+                                Administrador
+                            </label>
+                            <span id="admin-icon" class="ml-2"></span>
+                        </div>
+                        <p class="text-gray-500 text-sm">
+                            Se marcado, o usuário terá acesso à área de administração
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-6">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Voltar
+                </a>
+                <button type="submit" class="btn btn-primary flex items-center">
+                    <i class="fas fa-save mr-2"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Garantir que o script seja executado após o carregamento da página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar os ícones e estilos dos checkboxes
+        var isActiveCheckbox = document.getElementById('{{ form.is_active.id_for_label }}');
+        var isStaffCheckbox = document.getElementById('{{ form.is_staff.id_for_label }}');
+        
+        if (isActiveCheckbox) {
+            isActiveCheckbox.dispatchEvent(new Event('change'));
+        }
+        
+        if (isStaffCheckbox) {
+            isStaffCheckbox.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if is_new %}Nova{% else %}Editar{% endif %} Movimentação Pessoal
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+                {% if is_new %}Nova{% else %}Editar{% endif %} Movimentação Pessoal
+            </h2>
+            <a href="{% url 'lista_movimentacoes' %}" 
+               class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                Voltar
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-4 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded-lg">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Seleção de ocorrência -->
+            <div class="bg-gray-100 p-4 rounded-lg mb-6">
+                <h3 class="text-lg font-semibold mb-2">Tipo de Ocorrência</h3>
+                <div class="mb-4">
+                    {{ form.ocorrencia }}
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p class="font-semibold">Campos exibidos por ocorrência:</p>
+                    <ul class="list-disc pl-5 mt-1">
+                        <li>ADMISSÃO POR AUMENTO DE QUADRO: A - F - G - H</li>
+                        <li>ADMISSÃO POR SUBSTITUIÇÃO: A - B - E - G - H</li>
+                        <li>DESLIGAMENTO: C - F - G</li>
+                        <li>PROMOÇÃO / ENQUADRAMENTO: D - F - G</li>
+                        <li>TRANSFERÊNCIA: D - F - G</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Seleção de candidato -->
+            <div class="bg-gray-100 p-4 rounded-lg mb-6">
+                <h3 class="text-lg font-semibold mb-2">Selecionar Candidato</h3>
+                <div class="mb-4">
+                    {{ form.candidato }}
+                </div>
+                <div class="mt-2">
+                    <a href="{% url 'dashboard' %}" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-plus-circle"></i> Adicionar novo candidato
+                    </a>
+                </div>
+                <div id="candidato-info" class="text-sm"></div>
+            </div>
+            
+            <!-- Seção A - Situação Proposta -->
+            <div id="secao-a" class="border border-gray-200 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold mb-4 bg-blue-100 p-2 rounded">A - Situação Proposta</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nome do Candidato</label>
+                        {{ form.nome_candidato }}
+                        <div class="text-red-500 text-sm mt-1 hidden" id="erro-nome-candidato">Este campo é obrigatório</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        {{ form.email_candidato }}
+                        <div class="text-red-500 text-sm mt-1 hidden" id="erro-email-candidato">Este campo é obrigatório</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Telefone</label>
+                        {{ form.telefone_candidato }}
+                        <div class="text-red-500 text-sm mt-1 hidden" id="erro-telefone-candidato">Este campo é obrigatório</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Cargo</label>
+                        {{ form.cargo_proposto }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Área</label>
+                        {{ form.area_proposta }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Centro de Custo</label>
+                        {{ form.centro_custo_proposto }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Salário</label>
+                        {{ form.salario_proposto }}
+                    </div>
+                    <div class="flex items-center mt-6">
+                        <div class="mr-4">
+                            {{ form.salario_por_hora }}
+                            <label class="ml-2 text-sm font-medium text-gray-700">Por hora</label>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Data de Admissão</label>
+                            {{ form.data_admissao }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção B - Situação Atual (para substituição) -->
+            <div id="secao-b" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-yellow-100 p-2 rounded">B - Situação Atual (Substituição)</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nome do Colaborador Desligado</label>
+                        {{ form.nome_colaborador_substituido }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Registro</label>
+                        {{ form.registro_substituido }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Cargo</label>
+                        {{ form.cargo_atual }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Área</label>
+                        {{ form.area_atual }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Centro de Custo</label>
+                        {{ form.centro_custo_atual }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Salário</label>
+                        {{ form.salario_atual }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção C - Desligamento -->
+            <div id="secao-c" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-red-100 p-2 rounded">C - Desligamento</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Último Dia de Trabalho</label>
+                        {{ form.ultimo_dia_trabalho }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Motivo do Desligamento</label>
+                        {{ form.motivo_desligamento }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção D - Transferência/Promoção -->
+            <div id="secao-d" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-green-100 p-2 rounded">D - Transferência/Promoção</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Data do Último Reajuste</label>
+                        {{ form.data_ultimo_reajuste }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Percentual de Reajuste (%)</label>
+                        {{ form.percentual_reajuste }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção E - Admissão -->
+            <div id="secao-e" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-purple-100 p-2 rounded">E - Admissão</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Registro de Admissão</label>
+                        {{ form.registro_admissao }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Visto/Data de Admissão</label>
+                        {{ form.visto_data_admissao }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção F - Requisitos do Cargo -->
+            <div id="secao-f" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-indigo-100 p-2 rounded">F - Requisitos do Cargo</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Horário</label>
+                        {{ form.horario }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Idade</label>
+                        {{ form.idade }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Sexo</label>
+                        {{ form.sexo }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Estado Civil</label>
+                        {{ form.estado_civil }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Escolaridade</label>
+                        {{ form.escolaridade }}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">Experiência</label>
+                    {{ form.experiencia }}
+                </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">Outros Requisitos</label>
+                    {{ form.outros_requisitos }}
+                </div>
+            </div>
+            
+            <!-- Seção G - Uso Exclusivo do RH -->
+            <div id="secao-g" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-gray-200 p-2 rounded">G - Uso Exclusivo do RH</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Código do Cargo</label>
+                        {{ form.codigo_cargo }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Grupo/Faixa</label>
+                        {{ form.grupo_faixa }}
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex space-x-6">
+                    <div class="flex items-center">
+                        {{ form.confidencial }}
+                        <label class="ml-2 text-sm font-medium text-gray-700">Confidencial</label>
+                    </div>
+                    <div class="flex items-center">
+                        {{ form.previsao_orcamentaria }}
+                        <label class="ml-2 text-sm font-medium text-gray-700">Previsão Orçamentária</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção H - Uso Exclusivo do Recrutamento e Seleção -->
+            <div id="secao-h" class="border border-gray-200 rounded-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold mb-4 bg-orange-100 p-2 rounded">H - Uso Exclusivo do Recrutamento e Seleção</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Observações</label>
+                    {{ form.observacoes_recrutamento }}
+                </div>
+            </div>
+            
+            <!-- Assinaturas e Datas -->
+            <div class="border border-gray-200 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold mb-4 bg-gray-100 p-2 rounded">Assinaturas e Datas</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Data Assinatura Coordenação</label>
+                        {{ form.data_assinatura_coordenacao }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Data Assinatura Gerência</label>
+                        {{ form.data_assinatura_gerencia }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Data Assinatura Diretoria</label>
+                        {{ form.data_assinatura_diretoria }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Data Assinatura RH</label>
+                        {{ form.data_assinatura_rh }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fechamento da Vaga -->
+            <div class="border border-gray-200 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold mb-4 bg-gray-100 p-2 rounded">Fechamento da Vaga</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Data de Fechamento da Vaga</label>
+                    {{ form.data_fechamento_vaga }}
+                </div>
+            </div>
+            
+            <button type="button" 
+                    onclick="validarFormulario()"
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Salvar Movimentação Pessoal
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Script para mostrar/ocultar campos conforme a ocorrência -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Executar uma vez na carga da página
+        mostrarCamposRelevantes();
+        
+        // Adicionar evento de change ao select de ocorrência
+        document.querySelector('select[name="ocorrencia"]').addEventListener('change', mostrarCamposRelevantes);
+        
+        // Adicionar funcionalidade de pesquisa para o campo de candidato
+        const candidatoSelect = document.querySelector('select[name="candidato"]');
+        if (candidatoSelect) {
+            // Adicionar campo de pesquisa
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Pesquisar candidato...';
+            searchInput.className = 'w-full rounded-md border-gray-300 mb-2';
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                // Fazer requisição AJAX para buscar candidatos
+                fetch(`/search-candidatos/?term=${searchTerm}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Limpar opções atuais
+                        while (candidatoSelect.options.length > 1) {
+                            candidatoSelect.remove(1);
+                        }
+                        
+                        // Adicionar novas opções
+                        data.forEach(candidato => {
+                            const option = new Option(candidato.nome, candidato.id);
+                            candidatoSelect.add(option);
+                        });
+                    });
+            });
+            
+            // Inserir campo de pesquisa antes do select
+            candidatoSelect.parentNode.insertBefore(searchInput, candidatoSelect);
+            
+            // Adicionar evento de change ao select de candidato
+            candidatoSelect.addEventListener('change', function() {
+                preencherCamposCandidato(this.value);
+            });
+            
+            // Preencher os campos se já houver um candidato selecionado
+            if (candidatoSelect.value) {
+                preencherCamposCandidato(candidatoSelect.value);
+            }
+        }
+    });
+
+    // Função para preencher os campos do candidato
+    function preencherCamposCandidato(candidatoId) {
+        if (!candidatoId) return;
+        
+        // Fazer requisição AJAX para obter os dados do candidato
+        fetch(`/get-candidato-info/?candidato=${candidatoId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Preencher os campos do formulário
+                document.querySelector('input[name="nome_candidato"]').value = data.nome || '';
+                document.querySelector('input[name="email_candidato"]').value = data.email || '';
+                document.querySelector('input[name="telefone_candidato"]').value = data.telefone || '';
+                
+                // Atualizar a div de informações do candidato
+                const infoHtml = `
+                    <div class="mt-3 p-3 bg-blue-50 rounded-md">
+                        <p class="font-semibold">Candidato selecionado: ${data.nome}</p>
+                        <p>Email: ${data.email}</p>
+                        <p>Telefone: ${data.telefone}</p>
+                    </div>
+                `;
+                document.getElementById('candidato-info').innerHTML = infoHtml;
+            })
+            .catch(error => {
+                console.error('Erro ao buscar informações do candidato:', error);
+                document.getElementById('candidato-info').innerHTML = '<p class="text-red-500">Erro ao carregar informações do candidato</p>';
+            });
+    }
+
+    function mostrarCamposRelevantes() {
+        const ocorrencia = document.querySelector('select[name="ocorrencia"]').value;
+        
+        // Ocultar todas as seções primeiro
+        document.querySelectorAll('#secao-a, #secao-b, #secao-c, #secao-d, #secao-e, #secao-f, #secao-g, #secao-h').forEach(section => {
+            section.classList.add('hidden');
+        });
+        
+        // Mostrar seções relevantes conforme a ocorrência
+        switch(ocorrencia) {
+            case 'admissao_aumento':
+                // A - F - G - H
+                document.querySelector('#secao-a').classList.remove('hidden');
+                document.querySelector('#secao-f').classList.remove('hidden');
+                document.querySelector('#secao-g').classList.remove('hidden');
+                document.querySelector('#secao-h').classList.remove('hidden');
+                break;
+            case 'admissao_substituicao':
+                // A - B - E - G - H
+                document.querySelector('#secao-a').classList.remove('hidden');
+                document.querySelector('#secao-b').classList.remove('hidden');
+                document.querySelector('#secao-e').classList.remove('hidden');
+                document.querySelector('#secao-g').classList.remove('hidden');
+                document.querySelector('#secao-h').classList.remove('hidden');
+                break;
+            case 'desligamento':
+                // C - F - G
+                document.querySelector('#secao-c').classList.remove('hidden');
+                document.querySelector('#secao-f').classList.remove('hidden');
+                document.querySelector('#secao-g').classList.remove('hidden');
+                break;
+            case 'promocao':
+            case 'transferencia':
+                // D - F - G
+                document.querySelector('#secao-d').classList.remove('hidden');
+                document.querySelector('#secao-f').classList.remove('hidden');
+                document.querySelector('#secao-g').classList.remove('hidden');
+                break;
+            default:
+                // Mostrar apenas seção A por padrão
+                document.querySelector('#secao-a').classList.remove('hidden');
+        }
+    }
+
+    function validarFormulario() {
+        let formularioValido = true;
+        const ocorrencia = document.querySelector('select[name="ocorrencia"]').value;
+        
+        // Resetar mensagens de erro
+        document.querySelectorAll('[id^="erro-"]').forEach(el => el.classList.add('hidden'));
+        
+        // Validar campos obrigatórios visíveis
+        if (!document.querySelector('#secao-a').classList.contains('hidden')) {
+            // Validar campos da seção A
+            const nomeCandidato = document.querySelector('input[name="nome_candidato"]').value;
+            const emailCandidato = document.querySelector('input[name="email_candidato"]').value;
+            const telefoneCandidato = document.querySelector('input[name="telefone_candidato"]').value;
+            
+            if (!nomeCandidato) {
+                document.querySelector('#erro-nome-candidato').classList.remove('hidden');
+                formularioValido = false;
+            }
+            
+            if (!emailCandidato) {
+                document.querySelector('#erro-email-candidato').classList.remove('hidden');
+                formularioValido = false;
+            }
+            
+            if (!telefoneCandidato) {
+                document.querySelector('#erro-telefone-candidato').classList.remove('hidden');
+                formularioValido = false;
+            }
+        }
+        
+        // Se o formulário for válido, enviar
+        if (formularioValido) {
+            document.querySelector('form').submit();
+        } else {
+            // Rolar até o primeiro erro
+            const primeiroErro = document.querySelector('[id^="erro-"]:not(.hidden)');
+            if (primeiroErro) {
+                primeiroErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+</script>
+{% endblock %}

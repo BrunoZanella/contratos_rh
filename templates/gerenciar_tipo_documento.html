@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if tipo %}Editar{% else %}Novo{% endif %} Tipo de Documento
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+                {% if tipo %}Editar{% else %}Novo{% endif %} Tipo de Documento
+            </h2>
+            <a href="{% url 'listar_tipos_documentos' %}" 
+               class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                Voltar
+            </a>
+        </div>
+
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 border-yellow-400 text-yellow-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative mb-2" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label for="{{ form.nome.id_for_label }}" 
+                       class="block text-sm font-medium text-gray-800">
+                    {{ form.nome.label }}
+                </label>
+                <div class="mt-1">{{ form.nome }}</div>
+                {% if form.nome.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.nome.errors.0 }}</p>
+                {% endif %}
+                <p class="text-xs text-gray-500 mt-1">{{ form.nome.help_text }}</p>
+            </div>
+            
+            <div>
+                <label for="{{ form.nome_exibicao.id_for_label }}" 
+                       class="block text-sm font-medium text-gray-800">
+                    {{ form.nome_exibicao.label }}
+                </label>
+                <div class="mt-1">{{ form.nome_exibicao }}</div>
+                {% if form.nome_exibicao.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.nome_exibicao.errors.0 }}</p>
+                {% endif %}
+                <p class="text-xs text-gray-500 mt-1">{{ form.nome_exibicao.help_text }}</p>
+            </div>
+            
+            <div class="flex items-center">
+                {{ form.ativo }}
+                <label for="{{ form.ativo.id_for_label }}" 
+                       class="ml-2 block text-sm font-medium text-gray-800">
+                    {{ form.ativo.label }}
+                </label>
+            </div>
+            
+            <button type="submit" 
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Salvar Tipo de Documento
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

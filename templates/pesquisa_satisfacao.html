@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS Bundle (inclui Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+:root {
+    --primary-color: #4f46e5;
+    --primary-light: #e0e7ff;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-500: #6b7280;
+    /* --gray-800: #1f2937; */
+    --card-bg: #ffffff;
+    --body-bg: #f9fafb;
+}
+
+body {
+    background-color: var(--body-bg);
+}
+
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+.table thead {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.badge-secondary {
+    background-color: var(--gray-200);
+    color: var(--gray-800);
+}
+/* tirar o sublinhado nos botoes do card no base.html */
+a {
+    text-decoration: none !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container my-5">
+    <h2 class="text-center mb-4">Avaliações de Período de Experiência</h2>
+
+    <!-- Filtro -->
+    <div class="card p-4 shadow-sm mb-4 bg-white rounded-3 border-0">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6 col-sm-12">
+                <label for="gestor" class="form-label text-muted fw-bold">Gestor</label>
+                <input type="text" class="form-control form-control-sm" id="gestor" name="gestor" placeholder="Nome do Gestor" value="{{ gestor }}">
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12">
+                <label for="colaborador" class="form-label text-muted fw-bold">Colaborador</label>
+                <input type="text" class="form-control form-control-sm" id="colaborador" name="colaborador" placeholder="Nome do Colaborador" value="{{ colaborador }}">
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12">
+                <label for="avaliacao_tipo" class="form-label text-muted fw-bold">Tipo de Avaliação</label>
+                <select class="form-select form-select-sm" id="avaliacao_tipo" name="primeira_segunda_avaliacao">
+                    <option value="">-- Todas --</option>
+                    <option value="1" {% if avaliacao_tipo == '1' %}selected{% endif %}>Primeira</option>
+                    <option value="2" {% if avaliacao_tipo == '2' %}selected{% endif %}>Segunda</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6 col-sm-12">
+                <label for="data_admissao" class="form-label text-muted fw-bold">Data de Admissão</label>
+                <input type="date" class="form-control form-control-sm" id="data_admissao" name="data_admissao" value="{{ data_admissao }}">
+            </div>
+            <div class="col-lg-1 col-md-12 col-sm-12 d-grid">
+                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-search me-1"></i> Filtrar</button>
+            </div>
+        </form>
+    </div>
+    </div>
+    
+    <!-- Tabela -->
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered w-100">
+        <thead class="table-blue">
+            <tr>
+                <th>Gestor</th>
+                <th>Colaborador</th>
+                <th>Data Envio</th>
+                <th>Data Admissão</th>
+                <th>Tipo de Avaliação</th>
+                <th>Status</th>
+                <th>Ações</th>
+                <!-- <th>Token</th> -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for avaliacao in avaliacoes %}
+            <tr>
+                <td>{{ avaliacao.gestor_avaliador }}</td>
+                <td>{{ avaliacao.colaborador }}</td>
+                <td>{{ avaliacao.data_avaliacao|date:"d/m/Y" }}</td>
+                <td>{{ avaliacao.data_admissao|date:"d/m/Y" }}</td>
+                <td id="{{ avaliacao.token }}">{{ avaliacao.get_primeira_segunda_avaliacao_display }}</td>
+                <!-- <td id="">{{ avaliacao.token }}</td> -->
+                <td>
+                    {% if avaliacao.respondido %}
+                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Respondida</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pendente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if avaliacao.respondido %}
+                        <button class="btn btn-info btn-sm view-respostas-btn badge bg-success"
+                            data-id="{{ avaliacao.id }}"
+                            data-colaborador="{{ avaliacao.colaborador }}"
+                            data-token="{{ avaliacao.token }}"
+                            data-avaliacao_tipo="{{ avaliacao.primeira_segunda_avaliacao }}"
+                            data-admissao="{{ avaliacao.data_admissao }}">
+                            <i class="fas fa-eye me-1"></i> Ver Respostas
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+        <tr>
+          <td colspan="7" class="text-center">Nenhuma Avaliação encontrada.</td>
+        </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="avaliacaoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Respostas da Avaliação</h5>
+        
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBodyContent">
+        <!-- Respostas serão inseridas aqui via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Função para converter datas do formato "13 de Agosto de 2025" para "2025-08-13"
+    function formatDateToISO(dateStr) {
+        const months = {
+            'Janeiro': '01', 'Fevereiro': '02', 'Março': '03', 'Abril': '04',
+            'Maio': '05', 'Junho': '06', 'Julho': '07', 'Agosto': '08',
+            'Setembro': '09', 'Outubro': '10', 'Novembro': '11', 'Dezembro': '12'
+        };
+        const parts = dateStr.split(' de ');
+        if (parts.length === 3) {
+            return `${parts[2]}-${months[parts[1]]}-${parts[0].padStart(2,'0')}`;
+        }
+        return dateStr;
+    }
+
+    // Delegação de clique para todos os botões de ver respostas
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.view-respostas-btn');
+        if (!btn) return;
+
+        
+        // const colaborador = encodeURIComponent(btn.dataset.colaborador);
+        // const dataAdmissao = formatDateToISO(btn.dataset.admissao);
+        let avalia = btn.dataset.avaliacao_tipo;
+        let token = btn.dataset.token;
+        console.log(token)
+        
+        if (!avalia) avalia = 1;
+
+        const url = `/pesquisa-details/${token}`;
+        // console.log("URL chamada:", url);
+
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`Erro ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                const modal = new bootstrap.Modal(document.getElementById('avaliacaoModal'));
+                const modalBody = document.getElementById('modalBodyContent');
+
+                if (data.error) {
+                    modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                } else {
+                                        
+                    // console.log("dados pesquisa:", data);
+                    let html = `<div class="row g-3">
+                    <div class="col-12 mb-2">
+                        <p class="card-text">
+                            <strong>Gestor:</strong> ${data.gestor_avaliador} |
+                            <strong>Colaborador:</strong> ${data.colaborador} |
+                            <strong>Cargo:</strong> ${data.cargo} |
+                            <strong>Data de Admissão:</strong> ${data.data_admissao}
+                        </p>
+                    </div>
+                `;
+
+                // percorre os campos do formulário
+                for (const [chave, valor] of Object.entries(data)) {
+                    // Pular campos já mostrados acima
+                    if (['gestor_avaliador','colaborador','cargo','data_admissao', 'token'].includes(chave)) continue;
+
+                    // Tratar candidato aprovado ou demitido
+                    let displayValor = valor;
+                    if (chave === 'aprova_demite') {
+                        if (valor == 1) displayValor = 'Aprovado';
+                        else if (valor == 2) displayValor = 'Demitir';
+                        else displayValor = '-';
+                    }
+
+                    if (chave != 'aprova_demite'){
+                        if (valor == 1) displayValor = 'Nunca';
+                        if (valor == 2) displayValor = 'Raramente';
+                        if (valor == 3) displayValor = 'Às vezes';
+                        if (valor == 4) displayValor = 'Frequentemente';
+                        if (valor == 5) displayValor = 'Sempre';
+
+                    }
+
+                    
+                    html += `
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="card-title">${chave.replace(/_/g, ' ')}</h6>
+                                    <p class="card-text">${displayValor}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>'; // fecha row
+                modalBody.innerHTML = html;
+                }
+                modal.show();
+            })
+            .catch(err => {
+                const modal = new bootstrap.Modal(document.getElementById('avaliacaoModal'));
+                document.getElementById('modalBodyContent').innerHTML = `<div class="alert alert-danger">Erro ao carregar a avaliação</div>`;
+                modal.show();
+                console.error("Erro no fetch:", err);
+            });
+    });
+
+});
+</script>
+
+{% endblock %}

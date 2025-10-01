@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    
+    <button onclick="document.getElementById('modal-novo-candidato').classList.remove('hidden')"
+            class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors w-full sm:w-auto">
+        <i class="fas fa-plus mr-2"></i>Novo Candidato
+    </button>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <!-- Card - Candidatos Ativos -->
+    <a href="{% url 'lista_candidatos' %}?status=em_andamento" class="bg-blue-500 text-white rounded-lg shadow-md p-4 sm:p-6 hover:bg-blue-600 transition-colors">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm">Candidatos Ativos</p>
+                <h3 class="text-2xl sm:text-3xl font-bold">{{ ativos_count }}</h3>
+            </div>
+            <i class="fas fa-users text-2xl sm:text-3xl"></i>
+        </div>
+    </a>
+
+    <!-- Card - Pendentes -->
+    <a href="{% url 'lista_candidatos' %}?status=documentos_pendentes" class="bg-yellow-500 text-white rounded-lg shadow-md p-4 sm:p-6 hover:bg-yellow-600 transition-colors">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm">Pendentes</p>
+                <h3 class="text-2xl sm:text-3xl font-bold">{{ pendentes_count }}</h3>
+            </div>
+            <i class="fas fa-clock text-2xl sm:text-3xl"></i>
+        </div>
+    </a>
+
+    <!-- Card - Documentos com Erro -->
+    <a href="{% url 'lista_candidatos' %}?status=documentos_invalidos" class="bg-red-500 text-white rounded-lg shadow-md p-4 sm:p-6 hover:bg-red-600 transition-colors">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm">Docs com Erro</p>
+                <h3 class="text-2xl sm:text-3xl font-bold">{{ invalidos_count }}</h3>
+            </div>
+            <i class="fas fa-exclamation-triangle text-2xl sm:text-3xl"></i>
+        </div>
+    </a>
+
+    <!-- Card - Concluídos -->
+    <a href="{% url 'lista_candidatos' %}?status=concluido" class="bg-green-500 text-white rounded-lg shadow-md p-4 sm:p-6 hover:bg-green-600 transition-colors">
+        <div class="flex justify-between items-center">
+            <div>
+                <p class="text-sm">Concluídos</p>
+                <h3 class="text-2xl sm:text-3xl font-bold">{{ concluidos_count }}</h3>
+            </div>
+            <i class="fas fa-check-circle text-2xl sm:text-3xl"></i>
+        </div>
+    </a>
+</div>
+
+<!-- Lista de Candidatos Recentes -->
+<div class="bg-white shadow-md rounded-lg p-4 sm:p-6">
+    <h2 class="text-xl font-bold mb-4">Candidatos Recentes</h2>
+    
+    <!-- Versão para desktop (tabela) - esconde em telas pequenas -->
+    <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full">
+            <thead>
+                <tr class="bg-gray-50">
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for candidato in candidatos_recentes %}
+                <tr class="cursor-pointer hover:bg-gray-100"
+                    onclick="window.location.href='{% url 'detalhe_candidato' candidato.id %}';">
+                    <td class="px-6 py-4 whitespace-nowrap">{{ candidato.nome }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge status-{{ candidato.status }}">
+                            {{ candidato.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ candidato.data_cadastro|date:"d/m/Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Versão para mobile (cards) - mostra apenas em telas pequenas -->
+    <div class="md:hidden space-y-3">
+        {% for candidato in candidatos_recentes %}
+        <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 border border-gray-200"
+             onclick="window.location.href='{% url 'detalhe_candidato' candidato.id %}';">
+            <div class="flex justify-between items-start">
+                <div class="font-medium">{{ candidato.nome }}</div>
+                <span class="status-badge status-{{ candidato.status }} text-xs">
+                    {{ candidato.get_status_display }}
+                </span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+                <i class="fas fa-calendar-alt mr-1"></i> {{ candidato.data_cadastro|date:"d/m/Y" }}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center text-gray-500 py-4">
+            Nenhum candidato recente
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Novo Candidato -->
+<div id="modal-novo-candidato" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-4 sm:p-5 border w-full max-w-sm sm:max-w-md shadow-lg rounded-md bg-white m-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Novo Candidato</h3>
+            <button onclick="document.getElementById('modal-novo-candidato').classList.add('hidden')"
+                    class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button"
+                        onclick="document.getElementById('modal-novo-candidato').classList.add('hidden')"
+                        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full sm:w-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full sm:w-auto">
+                    Cadastrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if messages %}
+<div id="messages" class="fixed bottom-4 right-4 left-4 sm:left-auto z-50">
+    {% for message in messages %}
+    <div class="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg mb-2 text-center sm:text-left">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+<script>
+    setTimeout(() => {
+        document.getElementById('messages').remove();
+    }, 3000);
+</script>
+{% endif %}
+
+<style>
+    /* Estilos para os badges de status */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 9999px;
+    }
+    
+    .status-ativo {
+        background-color: #FEF3C7;
+        color: #92400E;
+    }
+    
+    .status-aguardando_inicio {
+        background-color: #E0E7FF;
+        color: #3730A3;
+    }
+    
+    .status-em_andamento {
+        background-color: #DBEAFE;
+        color: #1E40AF;
+    }
+    
+    .status-documentos_pendentes {
+        background-color: #FEF3C7;
+        color: #92400E;
+    }
+    
+    .status-documentos_invalidos {
+        background-color: #FEE2E2;
+        color: #B91C1C;
+    }
+    
+    .status-concluido {
+        background-color: #D1FAE5;
+        color: #065F46;
+    }
+</style>
+
+{% endblock %}

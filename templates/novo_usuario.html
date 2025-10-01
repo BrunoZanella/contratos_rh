@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_new %}Novo Usuário{% else %}Editar Usuário{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Cabeçalho -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
+                <i class="fas fa-{% if is_new %}user-plus{% else %}user-edit{% endif %} text-indigo-600 mr-2"></i>
+                {% if is_new %}Novo Usuário{% else %}Editar Usuário{% endif %}
+            </h1>
+            <p class="text-gray-600 mt-1">
+                {% if is_new %}
+                Preencha os dados para criar um novo usuário
+                {% else %}
+                Atualize os dados do usuário
+                {% endif %}
+            </p>
+        </div>
+        
+        <div>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary flex items-center justify-center">
+                <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-5 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                <i class="fas fa-{% if is_new %}plus-circle{% else %}edit{% endif %} text-indigo-600 mr-2"></i>
+                {% if is_new %}Cadastrar Novo Usuário{% else %}Atualizar Dados do Usuário{% endif %}
+            </h2>
+        </div>
+        
+        <div class="p-6">
+            <form method="post" action="">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Informações básicas -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Informações Básicas</h3>
+                        
+                        <div class="form-group">
+                            <label for="id_username" class="block text-sm font-medium text-gray-700">Nome de Usuário</label>
+                            <input type="text" name="username" id="id_username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <p class="text-xs text-gray-500 mt-1">Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_ apenas.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" name="email" id="id_email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_first_name" class="block text-sm font-medium text-gray-700">Nome</label>
+                            <input type="text" name="first_name" id="id_first_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_last_name" class="block text-sm font-medium text-gray-700">Sobrenome</label>
+                            <input type="text" name="last_name" id="id_last_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    
+                    <!-- Senha e Permissões -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Senha e Permissões</h3>
+                        
+                        <div class="form-group">
+                            <label for="id_password1" class="block text-sm font-medium text-gray-700">Senha</label>
+                            <input type="password" name="password1" id="id_password1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <p class="text-xs text-gray-500 mt-1">
+                                A senha não pode ser muito parecida com suas outras informações pessoais.
+                                A senha deve conter pelo menos 8 caracteres.
+                                A senha não pode ser uma senha comumente utilizada.
+                                A senha não pode ser inteiramente numérica.
+                            </p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_password2" class="block text-sm font-medium text-gray-700">Confirmar Senha</label>
+                            <input type="password" name="password2" id="id_password2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <p class="text-xs text-gray-500 mt-1">Digite a mesma senha novamente, para verificação.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_setor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select name="setor" id="id_setor" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">---------</option>
+                                {% for setor in form.setor.field.queryset %}
+                                <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" name="is_staff" id="id_is_staff" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="id_is_staff" class="ml-2 block text-sm text-gray-900">
+                                    Administrador
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Designa se este usuário pode acessar a página de administração.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="flex items-center">
+                                <input type="checkbox" name="is_active" id="id_is_active" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                <label for="id_is_active" class="ml-2 block text-sm text-gray-900">
+                                    Ativo
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Designa se este usuário deve ser tratado como ativo. <b>Desmarque isto ao invés de deletar contas.</b></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" class="btn btn-primary">
+                        {% if is_new %}Criar Usuário{% else %}Atualizar Usuário{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
