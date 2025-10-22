@@ -1904,6 +1904,7 @@ Agradecemos sua compreensão!
 from .utils.timeline import registrar_evento
 
 
+
 @login_required
 def timeline_candidato(request, candidato_id):
     """
@@ -3675,7 +3676,7 @@ def pesquisa(request):
 
     context = {
         # Envie o page_obj para o template em vez da lista completa
-        "page_obj": page_obj, 
+        "page_obj": avaliacoes, 
         
         # Manter os valores dos filtros para preencher os campos de busca novamente
         "gestor": gestor or "",
@@ -3683,9 +3684,10 @@ def pesquisa(request):
         "avaliacao_tipo": avaliacao_tipo or "",
         "data_admissao": data_admissao or "",
     }
-
+    print(f"Contexto: {context}")
     
     return render(request, "pesquisa_satisfacao.html", context)
+
 
 @login_required
 def historico_cobranca(request):

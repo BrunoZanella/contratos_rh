@@ -15,6 +15,7 @@ urlpatterns = [
     path('candidatos/<int:candidato_id>/excluir/', 
          views.excluir_candidato, name='excluir_candidato'),
     path('webhook', views.webhook, name='webhook'),
+#     path('webhook', views.webhook, name='webhook'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
@@ -91,3 +92,4 @@ urlpatterns = [
     path('pesquisa/', views.pesquisa, name='pesquisa'),
     path('pesquisa-details/<str:token>', views.get_pesquisa_details, name='get_pesquisa_details'),
 ]
+

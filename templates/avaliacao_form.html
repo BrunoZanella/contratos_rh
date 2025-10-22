@@ -6,12 +6,12 @@
 <div class="container my-3 my-md-5">
     <div class="card shadow-lg border-0 rounded-lg">
         <div class="card-header text-white py-4">
-            <h3 class="mb-0 text-center font-weight-bold">{{ avaliacao.primeira_segunda_avaliacao }}ª Avaliação de Período de Experiência</h3>
+            <h3 class="mb-0 text-center font-weight-bold" style="color: black;">{{ avaliacao.primeira_segunda_avaliacao }}ª Avaliação de Período de Experiência</h3>
             <p class="mb-0 text-center opacity-75 mt-2 h5">{{ avaliacao.colaborador }}</p>
         </div>
         <div class="card-body p-4 p-md-5">
             <div class="text-center mb-5">
-                <p class="h5 mb-1">Olá, <strong>{{ avaliacao.gestor_avaliador }}</strong>!</p>
+                <p class="h5 mb-1" style="color: black;">Olá, <strong>{{ avaliacao.gestor_avaliador }}</strong>!</p>
                 <p class="text-muted">Agradecemos por sua colaboração no desenvolvimento de nossa equipe.</p>
             </div>
             
@@ -602,6 +602,7 @@
         border-color: var(--primary-color);
         border-radius: 0.75rem;
         transition: all 0.2s ease-in-out;
+        color: var(--primary-light); /* Moved color here */
     }
 
     .btn-primary:hover {
